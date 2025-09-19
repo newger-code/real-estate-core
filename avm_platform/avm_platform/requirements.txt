@@ -1,0 +1,20 @@
+# requirements.txt (stabilized; Py 3.13 ok, but Docker better)
+pandas==2.2.2
+numpy==2.1.1
+requests==2.32.3
+beautifulsoup4==4.12.3
+selenium==4.24.0
+webdriver-manager==4.0.2
+geopandas==0.14.4
+shapely==2.0.6
+haversine==2.8.1
+torch==2.8.0
+pinecone-client==5.0.1
+reportlab==4.2.2
+fastapi==0.112.1
+uvicorn==0.30.6
+pydantic==2.8.2
+pyjwt==2.9.0
+squareup==43.0.2.20250820
+tqdm==4.66.5
+usaddress==0.5.10  # Fuzzy US addresses alt

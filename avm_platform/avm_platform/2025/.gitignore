@@ -1,0 +1,14 @@
+# Virtual environments
+venv*/
+*_venv/
+oavm_venv/
+
+# Large binary files
+*.so
+*.dylib
+node
+*.dll
+
+# OS files
+.DS_Store
+__pycache__/

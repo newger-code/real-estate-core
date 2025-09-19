@@ -1,0 +1,40 @@
+{
+  "address": "1240 Pondview Ave, Akron, OH 44305",
+  "site": "homes",
+  "timestamp": "20250918_215927",
+  "found": true,
+  "property_data": {
+    "price": "92,000 - $118,000",
+    "beds": "5",
+    "baths": "1",
+    "sqft": "1,589",
+    "address": "1240 Pondview Ave",
+    "property_type": "Single Family",
+    "property_type_inferred": "home",
+    "price_per_sqft": "65",
+    "status": "For Sale",
+    "property_tax": "Tax HistoryAssessment History2013201420152016201720182019202020212022202320242025$1",
+    "estimate_value": "Estimated Value: $92,000",
+    "avm_provider": "Collateral Analytics",
+    "mortgage_history": "Mortgage HistoryDate08/26/1998StatusPrevious OwnerTotal Amount$41,163",
+    "school_name": "s\n    \n    \n        Search Middle",
+    "school_walk_distance": "4"
+  },
+  "errors": [],
+  "steps_completed": [
+    "STEP_1_INITIAL_LOAD: Loading Homes.com homepage",
+    "STEP_1_LOADED: Homes.com homepage loaded",
+    "STEP_2_SEARCH_START: Looking for search input",
+    "STEP_2_SEARCH_FOUND: Found search input with selector: input[type=\"text\"]",
+    "STEP_3_ENTER_ADDRESS: Entering address: 1240 Pondview Ave, Akron, OH 44305",
+    "STEP_3_ADDRESS_ENTERED: Address entered in search bar",
+    "STEP_4_SUBMIT_SEARCH: Submitting search",
+    "STEP_4_SEARCH_SUBMITTED: Search submitted via keyboard Enter",
+    "POPUP_CHECK: Checking for popup blockers",
+    "POPUP_NONE: No popups detected",
+    "STEP_5_RESULTS_CHECK: Checking for search results",
+    "STEP_5_DIRECT_PROPERTY: Direct property page detected via URL: https://www.homes.com/property/1240-pondview-ave-akron-oh/5qr1h5v7vqxsj/",
+    "EXTRACT_START: Starting smart property data extraction",
+    "EXTRACT_COMPLETE: Smart extraction found 15 data fields"
+  ]
+}

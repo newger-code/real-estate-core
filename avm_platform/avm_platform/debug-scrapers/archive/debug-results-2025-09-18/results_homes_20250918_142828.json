@@ -1,0 +1,17 @@
+{
+  "address": "1240 Pondview Ave, Akron, OH 44305",
+  "site": "homes",
+  "timestamp": "20250918_142828",
+  "found": false,
+  "property_data": {},
+  "errors": [
+    "HTTP Error 403 on https://www.homes.com/",
+    "Search input not found"
+  ],
+  "steps_completed": [
+    "STEP_1_INITIAL_LOAD: Loading Homes.com homepage",
+    "STEP_1_LOADED: Homes.com homepage loaded",
+    "STEP_2_SEARCH_START: Looking for search input with human behavior",
+    "STEP_2_SEARCH_FAILED: Could not find search input"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "address": "1240 Pondview Ave, Akron, OH 44305",
+  "site": "homes",
+  "timestamp": "20250918_193812",
+  "found": false,
+  "property_data": {},
+  "errors": [
+    "No search results found"
+  ],
+  "steps_completed": [
+    "STEP_1_INITIAL_LOAD: Loading Homes.com homepage",
+    "STEP_1_LOADED: Homes.com homepage loaded",
+    "STEP_2_SEARCH_START: Looking for search input",
+    "STEP_2_SEARCH_FOUND: Found search input with selector: input[type=\"text\"]",
+    "STEP_3_ENTER_ADDRESS: Entering address: 1240 Pondview Ave, Akron, OH 44305",
+    "STEP_3_ADDRESS_ENTERED: Address entered in search bar",
+    "STEP_4_SUBMIT_SEARCH: Submitting search",
+    "STEP_4_SEARCH_SUBMITTED: Search submitted via click button:has-text(\"Search\")",
+    "STEP_5_RESULTS_CHECK: Checking for search results",
+    "STEP_5_NO_RESULTS: No search results found"
+  ]
+}
