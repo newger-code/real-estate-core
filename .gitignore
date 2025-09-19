@@ -27,3 +27,4 @@ out/
 *.pem
 *.crt
 *.key
+logs/
