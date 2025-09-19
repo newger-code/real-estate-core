@@ -28,3 +28,5 @@ out/
 *.crt
 *.key
 logs/
+# Archive and scratch files
+**/z_archive/
