@@ -29,4 +29,11 @@ out/
 *.key
 logs/
 # Archive and scratch files
-**/z_archive/
+**/z_archive/# Security & runtime artifacts
+**/*.env
+**/.env
+**/.env.*
+!*.example
+**/cert/
+**/screenshots/
+logs/
