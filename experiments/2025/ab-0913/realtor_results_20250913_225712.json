@@ -1,0 +1,10 @@
+[
+  {
+    "success": false,
+    "error": "net::ERR_TIMED_OUT at https://www.realtor.com/realestateandhomes-detail/1841-Marks-Ave_Akron_OH_44305"
+  },
+  {
+    "success": false,
+    "error": "net::ERR_TIMED_OUT at https://www.realtor.com/realestateandhomes-detail/1754-Hampton-Rd_Akron_OH_44305"
+  }
+]

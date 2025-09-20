@@ -42,3 +42,11 @@ experiments/**/screenshots/
 experiments/**/cert/
 experiments/**/venv*/
 experiments/**/.venv*/
+# Experiments: keep code, ignore heavy junk
+experiments/**/*.png
+experiments/**/*.jpg
+experiments/**/*.jpeg
+experiments/**/*.pdf
+experiments/**/logs/
+experiments/**/__pycache__/
+experiments/**/.ipynb_checkpoints/

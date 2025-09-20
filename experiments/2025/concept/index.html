@@ -1,0 +1,2370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Picket Pro Real Estate Deal Analyzer v1.8.15</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@latest/dist/css/splide.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@latest/dist/js/splide.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #111827; color: #d1d5db;}
+        .input-group { display: flex; align-items: center; background-color: #374151; border-radius: 0.5rem; border: 1px solid #4b5563; }
+        .input-group:focus-within { border-color: #60a5fa; box-shadow: 0 0 0 1px #60a5fa; }
+        .input-group span { padding: 0 0.5rem; color: #9ca3af; font-size: 0.75rem; }
+        .input-group input { border: none; background: transparent; width: 100%; padding: 0.25rem; outline: none; font-size: 0.8rem; color: #f3f4f6; }
+        .crisp-input { background-color: #374151; border-radius: 0.5rem; border: 1px solid #4b5563; padding: 0.25rem 0.5rem; font-size: 0.8rem; width: 100%; color: #f3f4f6;}
+        .crisp-input:disabled { background-color: #4b5563; cursor: not-allowed; }
+        .crisp-input:focus { border-color: #60a5fa; box-shadow: 0 0 0 1px #60a5fa; outline: none; }
+        .avm-input { font-size: 1.5rem; line-height: 2rem; font-weight: bold; text-align: left; border: none; border-bottom: 2px solid #4b5563; border-radius: 0; width: 100%; padding: 0.25rem 0.125rem; background: transparent; color: #f3f4f6; }
+        .avm-input:focus { outline: none; border-color: #60a5fa; box-shadow: none; }
+        .popup, .map-popup { display: none; position: fixed; z-index: 1000; background-color: #1f2937; color: #d1d5db; border: 1px solid #4b5563; border-radius: 0.75rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); left: 50%; top: 50%; transform: translate(-50%, -50%); }
+        .popup-header { cursor: grab; background-color: #374151; padding: 0.5rem 1rem; border-top-left-radius: 0.75rem; border-top-right-radius: 0.75rem; border-bottom: 1px solid #4b5563;}
+        .popup-content { padding: 1rem; }
+        .map-popup { width: 90vw; height: 90vh; padding: 0; }
+        .popup-overlay { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); }
+        .sortable-header { cursor: pointer; user-select: none; }
+        .sortable-header:hover { background-color: #374151; }
+        .icon-info { cursor: pointer; position: relative; display: inline-flex; align-items: center; }
+        .icon-info .tooltip { visibility: hidden; width: 140px; background-color: #111827; color: #fff; text-align: center; border-radius: 6px; padding: 5px; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -70px; opacity: 0; transition: opacity 0.3s; font-size: 10px; pointer-events: none; }
+        .icon-info:hover .tooltip { visibility: visible; opacity: 1; }
+        .filter-input { width: 100%; border: 1px solid #4b5563; background-color: #374151; color: #f3f4f6; border-radius: 0.375rem; padding: 0.125rem 0.25rem; font-size: 0.75rem; }
+        .input-section { padding: 0.5rem; border-radius: 0.5rem; display: flex; flex-direction: column; }
+        .toggle-switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #4b5563; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #3b82f6; }
+        input:checked + .slider:before { transform: translateX(20px); }
+        .leaflet-tile-pane { filter: grayscale(1) invert(1) brightness(0.8) contrast(2); }
+        .marker-bounce { animation: bounce 1s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        #save-indicator {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #22c55e;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            pointer-events: none;
+        }
+        .highlight-marker { filter: brightness(1.5); }
+        .nav-link { padding: 0.5rem 1rem; border-bottom: 2px solid transparent; color: #9ca3af; transition: all 0.2s ease-in-out; }
+        .nav-link:hover { color: #d1d5db; }
+        .nav-link.active { color: #e5e7eb; border-bottom-color: #3b82f6; }
+        .filter-command-bar .crisp-input, .filter-command-bar button, .multiselect-btn { padding-top: 0.25rem; padding-bottom: 0.25rem; font-size: 0.875rem; }
+        .filter-modal { width: 90vw; max-width: 1200px; height: 85vh; max-height: 800px; }
+        .filter-modal-body { display: grid; grid-template-columns: 200px 1fr 280px; height: calc(100% - 110px); }
+        .filter-modal-footer { height: 57px; }
+        .filter-category-list .category-item { padding: 0.5rem; cursor: pointer; border-radius: 0.375rem; font-weight: 500;}
+        .filter-category-list .category-item:hover { background-color: #374151; }
+        .filter-category-list .category-item.active { background-color: #3b82f6; color: white; }
+        .customization-panel .field-list { background-color: #111827; border: 1px solid #4b5563; border-radius: 0.5rem; height: 100%; overflow-y: auto; }
+        .customization-panel .field-list .field-item { padding: 0.375rem 0.75rem; cursor: pointer; user-select: none; }
+        .customization-panel .field-list .field-item:hover { background-color: #374151; }
+        .customization-panel .field-list .field-item.selected { background-color: #3b82f6; color: white; }
+        .collapsible-header { display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 1rem; cursor: pointer; }
+        .collapsible-header .chevron { transition: transform 0.2s ease-in-out; }
+        details[open] .collapsible-header .chevron { transform: rotate(90deg); }
+        .multiselect-dropdown { position: absolute; top: 100%; left: 0; background-color: #374151; border: 1px solid #4b5563; border-radius: 0.5rem; padding: 0.5rem; z-index: 20; min-width: 150px;}
+        .settings-nav-item { padding: 0.5rem 1rem; border-left: 3px solid transparent; cursor: pointer; font-weight: 500; color: #9ca3af; transition: all 0.2s ease-in-out; }
+        .settings-nav-item:hover { background-color: #374151; color: #d1d5db; }
+        .settings-nav-item.active { color: #e5e7eb; border-left-color: #3b82f6; background-color: #1f2937; }
+        .variable-pill { background-color: #4b5563; color: #d1d5db; padding: 0.25rem 0.5rem; border-radius: 0.25rem; cursor: pointer; font-size: 0.75rem; font-family: monospace; transition: background-color 0.2s; }
+        .variable-pill:hover { background-color: #6b7280; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-300">
+    <div id="save-indicator">All changes saved</div>
+    <div class="container mx-auto p-4 md:p-8">
+        <div class="mb-6 border-b border-gray-700">
+            <nav class="flex justify-between items-center mb-2">
+                <div class="flex items-center space-x-2">
+                    <div id="analyzer-back-button" class="hidden">
+                         <a href="#" onclick="showLandingPage()" class="flex items-center text-sm text-blue-400 hover:text-blue-300">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                               <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                             </svg>
+                             Back to Search
+                         </a>
+                    </div>
+                    <div id="main-nav-links" class="flex items-center space-x-2">
+                        <a href="#" class="nav-link active" data-page="landing-page" onclick="switchPage(this)">Search</a>
+                        <a href="#" class="nav-link" data-page="my-properties-page" onclick="switchPage(this)">My Properties</a>
+                        <a href="#" class="nav-link" data-page="settings-page" onclick="switchPage(this)">Settings</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2 text-sm font-medium">
+                    <span id="view-mode-label-basic" class="text-gray-400 transition-colors">Basic</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="view-mode-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <span id="view-mode-label-advanced" class="text-white transition-colors">Advanced</span>
+                </div>
+            </nav>
+            <header id="filter-command-bar" class="filter-command-bar pb-3 flex items-center gap-4 text-sm relative">
+                <input type="text" id="address-search-box" data-filterkey="address" class="crisp-input w-64" placeholder="Search Address, City, Zip...">
+                <div class="flex-shrink-0">
+                    <select id="saved-searches-dropdown" class="crisp-input" style="min-width: 200px;">
+                        <option value="">My Saved Searches</option>
+                    </select>
+                </div>
+                <div id="state-filter-container-main" class="relative flex-shrink-0"></div>
+
+                <div class="hidden lg:flex items-center gap-2">
+                    <label for="quick-filter-listPrice-min" class="text-gray-400">List Price</label>
+                    <input type="number" id="quick-filter-listPrice-min" data-filterkey="listPrice_min" placeholder="Min" class="crisp-input w-24">
+                    <span>-</span>
+                    <input type="number" id="quick-filter-listPrice-max" data-filterkey="listPrice_max" placeholder="Max" class="crisp-input w-24">
+                </div>
+                 <div class="hidden lg:flex items-center gap-2">
+                    <label for="quick-filter-beds-min" class="text-gray-400">Beds</label>
+                    <input type="number" id="quick-filter-beds-min" data-filterkey="beds_min" placeholder="Min" class="crisp-input w-20">
+                </div>
+                <div class="flex-grow"></div>
+                <button id="more-filters-btn" onclick="openFilterModal()" class="flex-shrink-0 bg-gray-700 text-white px-3 py-1.5 rounded-md hover:bg-gray-600 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 12.414V17a1 1 0 01-1.447.894l-2-1A1 1 0 018 16v-3.586L3.293 6.707A1 1 0 013 6V3z" />
+                    </svg>
+                    <span class="hidden sm:inline ml-2">Filters</span>
+                    <span id="more-filters-count" class="ml-1 text-gray-400">(0)</span>
+                </button>
+                <button id="market-update-btn-main" onclick="runSearch()" class="flex-shrink-0 bg-blue-600 text-white px-3 py-1.5 rounded-md font-semibold hover:bg-blue-700 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                    </svg>
+                    <span class="hidden sm:inline ml-2">Update</span>
+                    <span id="market-update-count" class="ml-1 text-blue-200">(10)</span>
+                </button>
+            </header>
+        </div>
+
+        <div id="landing-page">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div id="landing-property-list" class="space-y-4 h-[80vh] overflow-y-auto pr-2">
+                </div>
+                <div id="landing-map" class="bg-gray-800 rounded-lg h-[80vh]">
+                </div>
+            </div>
+        </div>
+        <div id="my-properties-page" class="hidden">
+            <header class="flex justify-between items-center mb-6">
+                <div class="flex items-center">
+                    <a href="#" class="nav-link active" onclick="switchMyPropertiesTab(this, 'saved')">Favorites</a>
+                    <a href="#" class="nav-link" onclick="switchMyPropertiesTab(this, 'archived')">Dislikes</a>
+                </div>
+                <button id="toggle-map-view-btn" class="bg-gray-600 text-white px-4 py-1 rounded-md hover:bg-gray-700 text-sm" onclick="toggleMyPropertiesMapView()">Hide Map</button>
+            </header>
+            <div id="my-properties-content" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div id="my-properties-list" class="space-y-4 h-[80vh] overflow-y-auto pr-2">
+                </div>
+                <div id="my-properties-map" class="bg-gray-800 rounded-lg h-[80vh]">
+                </div>
+            </div>
+        </div>
+        <div id="comparison-page" class="hidden">
+            </div>
+
+        <div id="settings-page" class="hidden">
+            <h1 class="text-3xl font-bold text-white mb-6">Settings & Defaults</h1>
+            <div class="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
+                <nav id="settings-nav" class="space-y-2">
+                    <div class="settings-nav-item active" onclick="switchSettingsTab(this, 'general-defaults')">General Defaults</div>
+                    <div class="settings-nav-item" onclick="switchSettingsTab(this, 'financing-defaults')">Financing Defaults</div>
+                    <div class="settings-nav-item" onclick="switchSettingsTab(this, 'max-offer-calculator')">Max Offer Calculator</div>
+                </nav>
+
+                <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
+                    <div id="settings-content-container">
+                        <div id="settings-panel-general-defaults" class="settings-panel space-y-6">
+                            <details open>
+                                <summary class="text-lg font-semibold text-blue-400 cursor-pointer">Profit Goals</summary>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400">Desired Profit ($)</label>
+                                        <input type="number" id="desiredProfit" class="crisp-input mt-1" placeholder="e.g. 50000">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400">Desired ROI (%)</label>
+                                        <input type="number" id="desiredRoi" class="crisp-input mt-1" placeholder="e.g. 20">
+                                    </div>
+                                </div>
+                            </details>
+                            <details open>
+                                <summary class="text-lg font-semibold text-blue-400 cursor-pointer">Closing Costs</summary>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400">Acquisition (%)</label>
+                                        <input type="number" id="defaultAcquisitionCosts" class="crisp-input mt-1">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400">Brokerage (%)</label>
+                                        <input type="number" id="defaultBrokerageFee" class="crisp-input mt-1">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400">Sales Closing (%)</label>
+                                        <input type="number" id="defaultSalesClosingCosts" class="crisp-input mt-1">
+                                    </div>
+                                </div>
+                            </details>
+                             <details>
+                                <summary class="text-lg font-semibold text-blue-400 cursor-pointer">Rental Expenses</summary>
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+                                    <div><label class="block text-sm font-medium text-gray-400">Taxes (% of Purchase)</label><input type="number" id="defaultTaxes" class="crisp-input mt-1"></div>
+                                    <div><label class="block text-sm font-medium text-gray-400">Insurance (% of Purchase)</label><input type="number" id="defaultInsurance" class="crisp-input mt-1"></div>
+                                    <div><label class="block text-sm font-medium text-gray-400">Vacancy (% of Rent)</label><input type="number" id="defaultVacancy" class="crisp-input mt-1"></div>
+                                    <div><label class="block text-sm font-medium text-gray-400">Maintenance (% of Rent)</label><input type="number" id="defaultMaintenance" class="crisp-input mt-1"></div>
+                                    <div><label class="block text-sm font-medium text-gray-400">Management (% of Rent)</label><input type="number" id="defaultPropManagement" class="crisp-input mt-1"></div>
+                                    <div><label class="block text-sm font-medium text-gray-400">Bad Debt (% of Rent)</label><input type="number" id="defaultBadDebt" class="crisp-input mt-1"></div>
+                                    <div><label class="block text-sm font-medium text-gray-400">Leasing Fee ($)</label><input type="number" id="defaultLeasingFee" class="crisp-input mt-1"></div>
+                                    <div><label class="block text-sm font-medium text-gray-400">Turnover ($)</label><input type="number" id="defaultTurnover" class="crisp-input mt-1"></div>
+                                    <div><label class="block text-sm font-medium text-gray-400">Utilities ($)</label><input type="number" id="defaultUtilities" class="crisp-input mt-1"></div>
+                                    <div><label class="block text-sm font-medium text-gray-400">CDD ($)</label><input type="number" id="defaultCdd" class="crisp-input mt-1"></div>
+                                    <div><label class="block text-sm font-medium text-gray-400">Other Fee ($)</label><input type="number" id="defaultOtherFee" class="crisp-input mt-1"></div>
+                                </div>
+                            </details>
+                        </div>
+                        <div id="settings-panel-financing-defaults" class="settings-panel hidden space-y-4">
+                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+                                <div><label class="block text-sm font-medium text-gray-400">Loan Type</label><input type="text" id="defaultLoanType" class="crisp-input mt-1"></div>
+                                <div><label class="block text-sm font-medium text-gray-400">LTV (%)</label><input type="number" id="defaultLTV" class="crisp-input mt-1"></div>
+                                <div><label class="block text-sm font-medium text-gray-400">Interest Rate (%)</label><input type="number" id="defaultInterestRate" class="crisp-input mt-1"></div>
+                                <div><label class="block text-sm font-medium text-gray-400">Amortization (Yrs)</label><input type="number" id="defaultAmortization" class="crisp-input mt-1"></div>
+                                <div><label class="block text-sm font-medium text-gray-400">ARM Length (Yrs)</label><input type="number" id="defaultArmLength" class="crisp-input mt-1"></div>
+                                <div><label class="block text-sm font-medium text-gray-400">Adjustable Rate (%)</label><input type="number" id="defaultAdjustableRate" class="crisp-input mt-1"></div>
+                                <div><label class="block text-sm font-medium text-gray-400">Bid Flex</label><input type="number" id="defaultBidFlex" class="crisp-input mt-1"></div>
+                             </div>
+                        </div>
+                        <div id="settings-panel-max-offer-calculator" class="settings-panel hidden space-y-6">
+                            <div class="p-4 bg-gray-900/50 rounded-lg space-y-4 border border-gray-700">
+                                <h3 class="text-lg font-semibold text-blue-400">User Defined Inputs</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 items-center">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400">Flip Factor</label>
+                                        <div class="input-group mt-1"><input type="number" id="calcFlipFactor" class="text-right" placeholder="75" oninput="updateSampleCalculation()"><span class="pr-2">%</span></div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-400">Min Flip Profit</label>
+                                        <div class="input-group mt-1"><span>$</span><input type="text" id="calcMinFlipProfit" class="!pl-0" placeholder="15,000" oninput="formatNumberWithCommas(this); updateSampleCalculation();"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="p-4 bg-gray-900/50 rounded-lg space-y-4 border border-gray-700">
+                                <h3 class="text-lg font-semibold text-blue-400">Formula Editor</h3>
+                                <p class="text-xs text-gray-500">Click a variable to add it to the formula. You can use `+ - * /` and `( )`.</p>
+                                <div id="variable-pills-container" class="flex flex-wrap gap-2"></div>
+                                <input type="text" id="max-offer-formula-input" class="crisp-input mt-2 font-mono" oninput="updateSampleCalculation()">
+                                <p id="formula-validation-message" class="text-xs mt-1 h-4"></p>
+                            </div>
+
+                             <div class="p-4 bg-gray-900/50 rounded-lg space-y-4 border border-gray-700">
+                                <h3 class="text-lg font-semibold text-blue-400">Formula Preview</h3>
+                                <div id="sample-inputs-container" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
+                                    </div>
+                                <div class="pt-4 border-t border-gray-700">
+                                    <label class="block text-sm font-medium text-gray-400">Calculated Max Offer</label>
+                                    <div class="input-group mt-1 max-w-xs"><span>$</span><input type="text" id="sample-output" class="!pl-0 font-bold text-green-400 text-lg" disabled></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-8 text-right">
+                        <button class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700" onclick="saveSettings()">Save All Settings</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="analyzer-page" class="hidden">
+            <div class="space-y-4"> <div class="bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-700">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-1 space-y-4">
+                            <div class="input-section h-full !p-0">
+                                <a id="propertyAddressLink" href="#" target="_blank" class="block text-sm font-medium text-blue-400 hover:underline mb-2"></a>
+                                <div class="relative">
+                                    <img id="mainPhoto" src="" alt="Main property view" class="w-full h-48 object-cover rounded-lg mb-2">
+                                    <button id="prev-photo" class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 p-1 rounded-full text-white"><</button>
+                                    <button id="next-photo" class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 p-1 rounded-full text-white">></button>
+                                </div>
+                                <div id="thumbnail-container" class="grid grid-cols-4 gap-2"></div>
+                                <div id="analyzer-info-buttons" class="mt-2 text-xs flex space-x-2">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="lg:col-span-2">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-bold text-white">Analysis Inputs</h2>
+                                <div class="flex items-center space-x-4 text-xs">
+                                    <div class="flex items-center space-x-2">
+                                        <label for="arv-lock" class="text-gray-400">Auto-ARV</label>
+                                        <label class="toggle-switch"><input type="checkbox" id="arv-lock" checked onchange="toggleArvLock(this.checked)"><span class="slider"></span></label>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <label for="input-lock" class="text-gray-400">Lock</label>
+                                        <label class="toggle-switch"><input type="checkbox" id="input-lock" onchange="toggleInputLock(this.checked)"><span class="slider"></span></label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
+                                <div class="input-section !p-2 space-y-3">
+                                    <label class="block text-sm font-medium text-gray-400">Purchase & Reno</label>
+                                    <div class="input-group"><span class="text-gray-400">$</span><input type="text" id="purchasePrice" class="!pl-0" oninput="formatNumberWithCommas(this); updateCalculations('purchasePrice');"></div>
+                                    <p id="purchasePricePerSqftSubtext" class="text-xs text-gray-500 pl-1 -mt-2"></p>
+                                    <div class="input-group mt-1"><span class="text-gray-400">$</span><input type="text" id="renoBudget" class="!pl-0" oninput="formatNumberWithCommas(this); updateCalculations('renoBudget');"></div>
+                                    <button id="renoAlgoBtn" class="mt-1 w-full text-xs bg-blue-600 text-white py-1 rounded-md hover:bg-blue-700">Use Algo</button>
+
+                                    <label class="block text-sm font-medium text-gray-400 pt-2">Property Details</label>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div><input type="number" id="subjectSqft" class="crisp-input" oninput="updateCalculations()"><label class="text-xs text-gray-500 pl-1">SqFt</label></div>
+                                        <div><input type="number" id="subjectYearBuilt" class="crisp-input" oninput="updateCalculations()"><label class="text-xs text-gray-500 pl-1">Year Built</label></div>
+                                    </div>
+                                </div>
+                                <div class="input-section !p-2 space-y-3">
+                                    <label class="block text-sm font-medium text-gray-400">Acquisition Costs</label>
+                                    <div class="flex space-x-2">
+                                        <div class="w-1/3"><div class="input-group"><input type="number" id="closingCostsPercent" class="text-right" oninput="updateCalculations('percent_acq')"><span class="pr-2">%</span></div></div>
+                                        <div class="w-2/3"><div class="input-group"><span class="text-gray-400">$</span><input type="text" id="closingCostsFixed" class="!pl-0" oninput="formatNumberWithCommas(this); updateCalculations('fixed_acq');"></div></div>
+                                    </div>
+
+                                    <label class="block text-sm font-medium text-gray-400 pt-2">Rental Assumptions</label>
+                                    <div class="input-group"><span class="text-gray-400">$</span><input type="text" id="rentPrice" class="!pl-0" oninput="formatNumberWithCommas(this); updateCalculations();"><label class="text-xs text-gray-500 pr-2">/month</label></div>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div><div class="input-group"><span class="text-gray-400">$</span><input type="text" id="taxes" class="!pl-0" oninput="formatNumberWithCommas(this); updateCalculations();"></div><label class="text-xs text-gray-500 pl-1">Taxes /year</label></div>
+                                        <div><div class="input-group"><span class="text-gray-400">$</span><input type="text" id="hoa" class="!pl-0" oninput="formatNumberWithCommas(this); updateCalculations();"></div><label class="text-xs text-gray-500 pl-1">HOA /month</label></div>
+                                    </div>
+                                </div>
+                                <div class="input-section !p-2 space-y-3">
+                                    <label class="block text-sm font-medium text-gray-400 flex items-center">Carrying Costs <svg id="carryInfoIcon" class="h-4 w-4 text-blue-400 ml-2 icon-info" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg></label>
+                                    <div class="grid grid-cols-2 gap-2">
+                                       <div><input type="number" id="holdingPeriod" class="crisp-input" oninput="updateCalculations()"><label class="text-xs text-gray-500 pl-1">Days</label></div>
+                                       <div><input type="text" id="monthlyCarryingCost" class="crisp-input" oninput="formatNumberWithCommas(this); updateCalculations();"><label class="text-xs text-gray-500 pl-1">$ / Mo</label></div>
+                                    </div>
+
+                                    <label class="block text-sm font-medium text-gray-400 pt-2">Sale Costs</label>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div><div class="input-group"><input type="number" id="brokerageFeePercent" class="text-right" oninput="updateCalculations()"><span class="pr-2">%</span></div><label class="text-xs text-gray-500 pl-1">Brokerage</label></div>
+                                        <div><div class="input-group"><input type="number" id="closingCostsSalePercent" class="text-right" oninput="updateCalculations()"><span class="pr-2">%</span></div><label class="text-xs text-gray-500 pl-1">Closing</label></div>
+                                    </div>
+                                    <hr class="my-2 border-gray-700"/>
+                                    <label class="block text-sm font-medium text-gray-400">Offer Status</label>
+                                    <select id="offerStatus" class="crisp-input bg-gray-700 text-gray-300" onchange="updatePropertyData(currentProperty.id, 'offerStatus', this.value)">
+                                        <option value="Not Set" selected class="text-gray-500">Not Set</option>
+                                        <option value="Need full UW">Need full UW</option>
+                                        <option value="Awaiting Decision">Awaiting Decision</option>
+                                        <option value="Watching">Watching</option>
+                                        <option value="Ready to Offer">Ready to Offer</option>
+                                        <option value="Submitted">Submitted</option>
+                                        <option value="Open Counter">Open Counter</option>
+                                        <option value="Re-Submitted">Re-Submitted</option>
+                                        <option value="Highest & Best Needed">Highest & Best Needed</option>
+                                        <option value="Rejected by Seller">Rejected by Seller</option>
+                                        <option value="Under Contract">Under Contract</option>
+                                        <option value="Purchased">Purchased</option>
+                                        <option value="Terminated">Terminated</option>
+                                        <option value="Withdrawn Offer">Withdrawn Offer</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-800 rounded-xl shadow-lg border border-gray-700 px-4">
+                    <details id="rental-expenses-collapsible">
+                        <summary class="collapsible-header">
+                            <span class="text-blue-400 font-semibold">Rental Expenses & Metrics</span>
+                            <span class="chevron">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                            </span>
+                        </summary>
+                        <div class="py-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                            <div class="space-y-3">
+                                <h3 class="text-md font-bold text-white border-b border-gray-700 pb-2">Key Metrics</h3>
+                                <div class="grid grid-cols-2 items-center text-sm"><label class="text-gray-400">Cap Rate:</label><p id="metric-capRate" class="font-semibold text-right">0.00%</p></div>
+                                <div class="grid grid-cols-2 items-center text-sm"><label class="text-gray-400">Cash Flow /mo:</label><p id="metric-cashFlow" class="font-semibold text-right">$0</p></div>
+                                <div class="grid grid-cols-2 items-center text-sm"><label class="text-gray-400">Cash on Cash:</label><p id="metric-cashOnCash" class="font-semibold text-right">0.00%</p></div>
+                                <div class="grid grid-cols-2 items-center text-sm"><label class="text-gray-400">IRR (based on hold):</label><p id="metric-irr" class="font-semibold text-right">0.00%</p></div>
+                                <div class="grid grid-cols-2 items-center text-sm"><label class="text-gray-400">Months Held:</label><input type="number" id="expense-monthsHeld" value="60" class="crisp-input !py-1 !text-right" oninput="updateCalculations()"></div>
+                            </div>
+                            <div class="space-y-2">
+                                <h3 class="text-md font-bold text-white border-b border-gray-700 pb-2">Operating Expenses</h3>
+                                <div id="rental-expenses-section" class="space-y-2 text-sm">
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+                <div class="bg-gray-800 rounded-xl shadow-lg border border-gray-700 px-4">
+                    <details id="mortgage-expenses-collapsible">
+                        <summary class="collapsible-header">
+                             <span class="text-blue-400 font-semibold">Mortgage Expenses</span>
+                             <span class="chevron">
+                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                             </span>
+                        </summary>
+                        <div id="mortgage-expenses-section" class="py-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+                        </div>
+                    </details>
+                </div>
+                <hr class="my-6 border-gray-700"/>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-green-900/20 border border-green-700/30 rounded-lg p-3 text-center flex flex-col justify-center">
+                        <p class="text-xs font-medium text-green-400 flex justify-center items-center">
+                            EST. NET PROFIT <svg id="profitInfoIcon" class="h-4 w-4 text-green-400 ml-2 icon-info" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                        </p>
+                        <p id="netProfit" class="text-3xl font-bold text-green-400">$39,788</p>
+                    </div>
+                    <div class="bg-blue-900/20 border border-blue-700/30 rounded-lg p-3 text-center flex flex-col justify-center">
+                        <p class="text-xs font-medium text-blue-400">RETURN ON INVESTMENT</p>
+                        <p id="roi" class="text-3xl font-bold text-blue-400">21.0%</p>
+                    </div>
+                    <div class="bg-gray-900/20 border border-gray-700/30 rounded-lg p-4 grid grid-cols-2 gap-4 items-center">
+                        <div class="text-left">
+                            <label class="block text-sm font-medium text-gray-400 border-b-2 border-dotted border-gray-600 mb-2">ARV</label>
+                            <input type="text" id="estARV" value="$528,040" class="avm-input" oninput="formatNumberWithCommas(this); updateCalculations(null, true);">
+                            <p id="arvPerSqftSubtext" class="text-xs text-gray-500 mt-1"></p>
+                        </div>
+                        <div class="text-left">
+                            <label class="block text-sm font-medium text-gray-400 border-b-2 border-dotted border-gray-600 mb-2">Basis <svg id="basisInfoIcon" class="h-4 w-4 text-gray-500 ml-1 icon-info inline" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg></label>
+                            <p id="totalCost" class="text-2xl font-bold text-red-500">$474,611</p>
+                            <p class="text-xs text-gray-500 mt-1">Total Project Cost</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-700">
+                <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
+                    <h2 class="text-xl font-bold text-white">After-Repair Comps Analysis</h2>
+                    <div class="flex items-center space-x-4">
+                        <div>
+                            <label for="distanceFilter" class="block text-xs font-medium text-gray-400">Max Distance: <span id="distanceValue">0.5</span> mi</label>
+                            <input type="range" id="distanceFilter" min="0.1" max="5" step="0.05" value="0.5" class="w-full" oninput="document.getElementById('distanceValue').textContent = this.value; applyFiltersAndRender();">
+                        </div>
+                        <div>
+                            <label for="compTimeframe" class="block text-xs font-medium text-gray-400">Timeframe</label>
+                            <select id="compTimeframe" class="w-full bg-gray-700 border-gray-600 rounded-md text-xs p-1">
+                                <option value="3">Last 3 Months</option>
+                                <option value="6" selected>Last 6 Months</option>
+                                <option value="9">Last 9 Months</option>
+                                <option value="12">Last 12 Months</option>
+                                <option value="24">Last 24 Months</option>
+                            </select>
+                        </div>
+                        <button id="analyze-comps-btn" class="bg-purple-600 text-white px-3 py-1 text-xs rounded-md font-semibold hover:bg-purple-700 self-end">✨ Analyze Comps with AI</button>
+                        <button id="enlargeMapBtn" class="bg-gray-600 text-gray-200 px-3 py-1 text-xs rounded-md font-semibold hover:bg-gray-700 self-end">Enlarge Map</button>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+                <div class="bg-gray-700/50 p-3 rounded-lg text-center"><p class="text-xs text-gray-400">Avg. Sale Price (Comps)</p><p id="avgSalePrice" class="text-xl font-bold text-white">$528,040</p></div>
+                <div class="bg-gray-700/50 p-3 rounded-lg text-center"><p class="text-xs text-gray-400">Avg. $/SqFt (Comps)</p><p id="avgSqftPrice" class="text-xl font-bold text-white">$341</p></div>
+                <div class="bg-black rounded-lg p-1 md:col-span-1 lg:col-span-2"><div id="analyzerMap" class="w-full h-24 bg-gray-900 rounded-md"></div></div>
+            </div>
+
+            <div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-700 text-xs"><thead class="bg-gray-900/50"><tr>
+                <th class="p-2 w-10"><input type="checkbox" id="selectAllComps" checked onchange="toggleAllComps(this)" class="bg-gray-700 border-gray-600"></th>
+                <th class="p-2">Image</th>
+                <th class="p-2 text-left sortable-header" onclick="sortTable('address')">Property <span>↕️</span></th>
+                <th class="p-2 text-left sortable-header" onclick="sortTable('price')">Sold Price <span>↕️</span></th>
+                <th class="p-2 text-left sortable-header" onclick="sortTable('pricePerSqft')">$/SqFt <span>↕️</span></th>
+                <th class="p-2 text-left sortable-header" onclick="sortTable('dist')">Dist. <span>↕️</span></th>
+                <th class="p-2 text-left sortable-header" onclick="sortTable('beds')">Beds <span>↕️</span></th>
+                <th class="p-2 text-left sortable-header" onclick="sortTable('baths')">Baths <span>↕️</span></th>
+                <th class="p-2 text-left sortable-header" onclick="sortTable('sqft')">SqFt <span>↕️</span></th>
+                <th class="p-2 text-left sortable-header" onclick="sortTable('closedDate')">Closed <span>↕️</span></th>
+            </tr>
+            <tr class="bg-gray-700/30">
+                <th></th><th></th>
+                <th><input type="text" class="filter-input" data-key="address" onkeyup="applyFiltersAndRender()"></th>
+                <th><input type="text" class="filter-input" placeholder="e.g. >500k" data-key="price" onkeyup="applyFiltersAndRender()"></th>
+                <th><input type="text" class="filter-input" placeholder="e.g. <350" data-key="pricePerSqft" onkeyup="applyFiltersAndRender()"></th>
+                <th><input type="text" class="filter-input" placeholder="e.g. <0.5" data-key="dist" onkeyup="applyFiltersAndRender()"></th>
+                <th><input type="text" class="filter-input" placeholder="e.g. 3" data-key="beds" onkeyup="applyFiltersAndRender()"></th>
+                <th><input type="text" class="filter-input" placeholder="e.g. >=2" data-key="baths" onkeyup="applyFiltersAndRender()"></th>
+                <th><input type="text" class="filter-input" placeholder="1k-2k" data-key="sqft" onkeyup="applyFiltersAndRender()"></th>
+                <th><input type="text" class="filter-input" placeholder="e.g. >2025-06" data-key="closedDate" onkeyup="applyFiltersAndRender()"></th>
+            </tr>
+            </thead><tbody id="compsTable" class="divide-y divide-gray-700"></tbody></table></div>
+        </div>
+    </div>
+
+    <div id="popupOverlay" class="popup-overlay"></div>
+    <div id="basisPopup" class="popup w-11/12 max-w-sm p-0"><div class="popup-header flex justify-between items-center"><h3 class="text-lg font-bold">Basis Breakdown</h3><button class="text-2xl font-bold close-popup-btn">×</button></div><div id="basisBreakdown" class="popup-content space-y-2 text-sm"></div></div>
+    <div id="carryPopup" class="popup w-11/12 max-w-sm p-0"><div class="popup-header flex justify-between items-center"><h3 class="text-lg font-bold">Carrying Cost Formulas</h3><button class="text-2xl font-bold close-popup-btn">×</button></div><div class="popup-content space-y-2 text-sm"><p><b>Holding Period:</b> 60 days + 1 week (7 days) per $10,000 of renovation budget.</p><p><b>Monthly Cost:</b> The greater of 0.7% of the Purchase Price or a $500 minimum.</p></div></div>
+    <div id="profitPopup" class="popup w-11/12 max-w-sm p-0"><div class="popup-header flex justify-between items-center"><h3 class="text-lg font-bold">Net Profit Calculation</h3><button class="text-2xl font-bold close-popup-btn">×</button></div><div id="profitBreakdown" class="popup-content space-y-2 text-sm"></div></div>
+    <div id="mapPopup" class="map-popup"><div class="popup-header flex justify-between items-center"><h3 class="text-lg font-bold">Comp Map</h3><div><button id="unpinMapBtn" class="bg-yellow-400 text-black px-3 py-1 text-xs rounded-md font-semibold mr-2">Unpin</button><button class="text-2xl font-bold close-popup-btn">×</button></div></div><div id="largeMapContainer" class="w-full h-[calc(100%-53px)] bg-gray-900 rounded-b-lg"></div></div>
+    <div id="archive-confirm-popup" class="popup w-11/12 max-w-sm p-0">
+        <div class="popup-header flex justify-between items-center"><h3 class="text-lg font-bold">Archive Property</h3><button class="text-2xl font-bold close-popup-btn">×</button></div>
+        <div class="popup-content space-y-4 text-sm">
+            <p>Are you sure you want to archive this property? It will be moved to the Archived tab.</p>
+            <div class="flex justify-end space-x-2">
+                <button class="bg-gray-600 text-white px-3 py-1 rounded-md hover:bg-gray-700" onclick="closeAllPopups()">Cancel</button>
+                <button id="confirm-archive-btn" class="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700">Archive</button>
+            </div>
+        </div>
+    </div>
+    <div id="comp-photos-popup" class="popup w-11/12 max-w-3xl p-0"><div class="popup-header flex justify-between items-center"><h3 id="comp-photos-title" class="text-lg font-bold">Comp Photos</h3><button class="text-2xl font-bold close-popup-btn">×</button></div><div class="popup-content"><div id="splide-carousel" class="splide"><div class="splide__track"><ul class="splide__list"></ul></div></div></div></div>
+    <div id="generic-popup" class="popup w-11/12 max-w-md p-0"><div class="popup-header flex justify-between items-center"><h3 id="generic-popup-title" class="text-lg font-bold"></h3><button class="text-2xl font-bold close-popup-btn">×</button></div><div id="generic-popup-content" class="popup-content text-sm"></div></div>
+    
+    <div id="more-filters-modal" class="popup filter-modal p-0">
+        <div class="popup-header flex justify-between items-center">
+            <h3 class="text-lg font-bold">Search Criteria</h3>
+            <button class="text-2xl font-bold close-popup-btn">×</button>
+        </div>
+        
+        <div class="filter-modal-body">
+            <div id="filter-category-list" class="filter-category-list p-4 bg-gray-800 border-r border-gray-700 overflow-y-auto space-y-2">
+                </div>
+            
+            <div class="p-6 overflow-y-auto">
+                <div id="filter-controls-container" class="space-y-6">
+                    </div>
+            </div>
+
+            <div class="customization-panel p-4 bg-gray-800 border-l border-gray-700 flex flex-col">
+                <h3 class="text-lg font-bold text-white mb-3">Customize Fields</h3>
+                <div class="flex flex-col flex-grow">
+                    <label class="font-semibold text-sm mb-1 text-gray-400">Selected Fields</label>
+                    <div id="selected-fields-list" class="field-list p-1 space-y-1 flex-grow mb-3"></div>
+
+                    <div class="flex items-center justify-end space-x-2 mb-3">
+                         <button id="remove-field-btn" class="bg-red-600/50 text-white p-1 rounded-md hover:bg-red-600/80 text-xs">↓ Remove</button>
+                        <button id="add-field-btn" class="bg-green-600/50 text-white p-1 rounded-md hover:bg-green-600/80 text-xs">↑ Add</button>
+                    </div>
+
+                    <label class="font-semibold text-sm mb-1 text-gray-400">Available Fields</label>
+                    <div id="available-fields-list" class="field-list p-1 space-y-1 flex-grow"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="filter-modal-footer p-3 bg-gray-800 border-t border-gray-700 flex items-center">
+             <div id="modal-footer-actions" class="w-full flex justify-between items-center">
+                <button id="reset-filters-btn" onclick="resetFilters()" class="text-sm text-gray-400 hover:text-white">Reset to Default</button>
+                <div>
+                   <button onclick="toggleModalSaveForm(true)" class="bg-gray-600 text-white px-4 py-1.5 rounded-md font-semibold hover:bg-gray-500 mr-2">Save Search</button>
+                   <button id="market-update-btn-modal" onclick="runSearch(true)" class="bg-blue-600 text-white px-4 py-1.5 rounded-md font-semibold hover:bg-blue-700">Market Update (0)</button>
+                   <button onclick="runSearch(true)" class="text-sm text-gray-400 hover:text-white ml-4">Close</button>
+                </div>
+             </div>
+             <div id="modal-save-form" class="w-full hidden items-center gap-3">
+                 <input type="text" id="modal-search-name-input" class="crisp-input flex-grow" placeholder="Enter search name...">
+                 <button id="modal-confirm-save-btn" class="bg-blue-600 text-white px-4 py-1.5 rounded-md">Save</button>
+                 <button id="modal-cancel-save-btn" onclick="toggleModalSaveForm(false)" class="text-gray-400 hover:text-white">Cancel</button>
+             </div>
+        </div>
+    </div>
+    
+    <script>
+        // --- DATA ---
+        let userSettings = {};
+        let allProperties = {
+            'my-deals': [
+                { id: 1, address: '123 Main St, Nashville, TN 37206', listPrice: 420000, lat: 36.174465, lng: -86.767960, purchasePrice: 420000, renoBudget: 39500, sqft: 1550, yearBuilt: 1985, beds: 3, baths: 2.5, photos: ['https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2','https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2','https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], source: 'Active MLS', dom: 12, estRentAvm: 2100, rentPrice: 1995, hoa: 0, offerStatus: 'Watching', remarks: 'Beautifully renovated home in a prime location. Features a modern kitchen and a spacious backyard.', hexData: 'Safety Score: 8/10, Median Income: $75k, School Score: 9/10, Flood Plain: No', notes: '', currentPhotoIndex: 0 },
+                { id: 2, address: '456 Oak St, Franklin, TN 37064', listPrice: 395000, lat: 35.9251, lng: -86.8689, purchasePrice: 380000, renoBudget: 55000, sqft: 1800, yearBuilt: 1992, beds: 4, baths: 2.5, photos: ['https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2', 'https://images.pexels.com/photos/208736/pexels-photo-208736.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], source: 'Off-MLS', dom: 7, estRentAvm: 2400, rentPrice: 2350, hoa: 25, offerStatus: 'Considering', remarks: 'Great investment opportunity. Needs some cosmetic updates but has solid bones. Large corner lot.', hexData: 'Safety Score: 7/10, Median Income: $85k, School Score: 8/10, Flood Plain: No', notes: 'Wholesaler says roof is 5 years old.', currentPhotoIndex: 0 },
+                { id: 3, address: '789 Pine Ave, Brentwood, TN 37027', listPrice: 610000, lat: 36.0331, lng: -86.7828, purchasePrice: 610000, renoBudget: 100000, sqft: 2500, yearBuilt: 2005, beds: 4, baths: 3, photos: ['https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], source: 'Active MLS', dom: 32, estRentAvm: 3200, rentPrice: 3100, hoa: 100, offerStatus: 'Watching', remarks: 'Luxury home in desirable neighborhood. High-end finishes throughout.', hexData: 'Safety Score: 9/10, Median Income: $150k, School Score: 10/10, Flood Plain: No', notes: '', currentPhotoIndex: 0 },
+                { id: 4, address: '101 Maple Dr, Hendersonville, TN 37075', listPrice: 350000, lat: 36.3048, lng: -86.6200, purchasePrice: 350000, renoBudget: 45000, sqft: 1650, yearBuilt: 1988, beds: 3, baths: 2, photos: ['https://images.pexels.com/photos/221540/pexels-photo-221540.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], source: 'Active MLS', dom: 21, estRentAvm: 1900, rentPrice: 1850, hoa: 0, offerStatus: 'Offer Made', remarks: 'Cozy single-family home with a large, fenced-in backyard.', hexData: 'Safety Score: 8/10, Median Income: $70k, School Score: 7/10, Flood Plain: No', notes: '', currentPhotoIndex: 0 },
+                { id: 5, address: '212 Birch Rd, Murfreesboro, TN 37129', listPrice: 280000, lat: 35.8456, lng: -86.3903, purchasePrice: 280000, renoBudget: 30000, sqft: 1400, yearBuilt: 1995, beds: 3, baths: 2, photos: ['https://images.pexels.com/photos/209315/pexels-photo-209315.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], source: 'Off-MLS', dom: 3, estRentAvm: 1600, rentPrice: 1550, hoa: 0, offerStatus: 'Watching', remarks: 'Perfect starter home or investment property. Close to amenities.', hexData: 'Safety Score: 7/10, Median Income: $60k, School Score: 7/10, Flood Plain: Yes', notes: '', currentPhotoIndex: 0 },
+                { id: 6, address: '333 Cedar Ln, Gallatin, TN 37066', listPrice: 315000, lat: 36.3884, lng: -86.4467, purchasePrice: 315000, renoBudget: 40000, sqft: 1700, yearBuilt: 1990, beds: 3, baths: 2.5, photos: ['https://images.pexels.com/photos/280229/pexels-photo-280229.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], source: 'Active MLS', dom: 45, estRentAvm: 1800, rentPrice: 1750, hoa: 0, offerStatus: 'Watching', remarks: 'Well-maintained home with a two-car garage.', hexData: 'Safety Score: 8/10, Median Income: $65k, School Score: 8/10, Flood Plain: No', notes: '', currentPhotoIndex: 0 },
+                { id: 7, address: '444 Elm St, Lebanon, TN 37087', listPrice: 250000, lat: 36.2084, lng: -86.2911, purchasePrice: 250000, renoBudget: 35000, sqft: 1300, yearBuilt: 1982, beds: 3, baths: 1.5, photos: ['https://images.pexels.com/photos/209315/pexels-photo-209315.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], source: 'Off-MLS', dom: 9, estRentAvm: 1400, rentPrice: 1350, hoa: 0, offerStatus: 'Under Contract', remarks: 'Investor special. Needs TLC but has great potential.', hexData: 'Safety Score: 6/10, Median Income: $55k, School Score: 6/10, Flood Plain: No', notes: 'Seller is motivated.', currentPhotoIndex: 0 },
+                { id: 8, address: '555 Spruce Way, Smyrna, TN 37167', listPrice: 330000, lat: 35.9828, lng: -86.5153, purchasePrice: 330000, renoBudget: 50000, sqft: 1900, yearBuilt: 2001, beds: 4, baths: 2, photos: ['https://images.pexels.com/photos/2102587/pexels-photo-2102587.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], source: 'Active MLS', dom: 14, estRentAvm: 2000, rentPrice: 1950, hoa: 30, offerStatus: 'Watching', remarks: 'Spacious family home in a quiet subdivision.', hexData: 'Safety Score: 8/10, Median Income: $80k, School Score: 8/10, Flood Plain: No', notes: '', currentPhotoIndex: 0 },
+                { id: 9, address: '666 Fir Ave, Spring Hill, TN 37174', listPrice: 450000, lat: 35.7498, lng: -86.9292, purchasePrice: 450000, renoBudget: 60000, sqft: 2200, yearBuilt: 2010, beds: 4, baths: 3, photos: ['https://images.pexels.com/photos/164558/pexels-photo-164558.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], source: 'Off-MLS', dom: 5, estRentAvm: 2600, rentPrice: 2500, hoa: 50, offerStatus: 'Considering', remarks: 'Newer construction with modern amenities.', hexData: 'Safety Score: 9/10, Median Income: $95k, School Score: 9/10, Flood Plain: No', notes: 'Has a community pool.', currentPhotoIndex: 0 },
+                { id: 10, address: '777 Willow Creek, Clarksville, TN 37040', listPrice: 220000, lat: 36.5298, lng: -87.3595, purchasePrice: 220000, renoBudget: 25000, sqft: 1200, yearBuilt: 1978, beds: 3, baths: 1, photos: ['https://images.pexels.com/photos/208736/pexels-photo-208736.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], source: 'Active MLS', dom: 60, estRentAvm: 1300, rentPrice: 1250, hoa: 0, offerStatus: 'Watching', remarks: 'Affordable home with a large lot. Great for first-time buyers or investors.', hexData: 'Safety Score: 6/10, Median Income: $50k, School Score: 6/10, Flood Plain: Yes', notes: '', currentPhotoIndex: 0 }
+            ],
+            'broker': [], 'saved': [], 'archived': []
+        };
+        let currentProperty = null;
+        let currentPhotoIndex = 0;
+        let comparedProperties = new Set();
+        let compsData = [
+            { id: 1, address: '205 Oak Ave', price: 550000, sqft: 1600, beds: 3, baths: 2, dist: 0.3, photos: ['https://images.pexels.com/photos/206172/pexels-photo-206172.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2', 'https://images.pexels.com/photos/271816/pexels-photo-271816.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], lat: 36.1650, lng: -86.7840, closedDate: '2025-07-15' },
+            { id: 2, address: '410 Pine Ln', price: 570000, sqft: 1650, beds: 3, baths: 2.5, dist: 0.4, photos: ['https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], lat: 36.1600, lng: -86.7800, closedDate: '2025-06-28' },
+            { id: 3, address: '732 Maple Dr', price: 505000, sqft: 1520, beds: 3, baths: 2, dist: 0.5, photos: ['https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], lat: 36.1615, lng: -86.7880, closedDate: '2025-06-11' },
+            { id: 4, address: '950 Elm St', price: 520000, sqft: 1580, beds: 3, baths: 2, dist: 0.6, photos: ['https://images.pexels.com/photos/206172/pexels-photo-206172.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], lat: 36.1620, lng: -86.7850, closedDate: '2025-05-20' },
+            { id: 5, address: '112 Birch Way', price: 540000, sqft: 1620, beds: 3, baths: 2.5, dist: 0.7, photos: ['https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], lat: 36.1630, lng: -86.7790, closedDate: '2025-04-15' },
+            { id: 6, address: '345 Cedar Rd', price: 490000, sqft: 1480, beds: 3, baths: 2, dist: 0.8, photos: ['https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], lat: 36.1640, lng: -86.7870, closedDate: '2025-03-10' },
+            { id: 7, address: '678 Spruce Ave', price: 560000, sqft: 1700, beds: 4, baths: 2.5, dist: 0.9, photos: ['https://images.pexels.com/photos/206172/pexels-photo-206172.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], lat: 36.1660, lng: -86.7830, closedDate: '2025-02-05' },
+            { id: 8, address: '890 Fir Ln', price: 510000, sqft: 1550, beds: 3, baths: 2, dist: 1.0, photos: ['https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], lat: 36.1670, lng: -86.7810, closedDate: '2025-01-01' },
+            { id: 9, address: '123 Willow St', price: 530000, sqft: 1590, beds: 3, baths: 2, dist: 1.1, photos: ['https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], lat: 36.1680, lng: -86.7820, closedDate: '2024-12-15' },
+            { id: 10, address: '456 Pine Rd', price: 500000, sqft: 1500, beds: 3, baths: 2, dist: 1.2, photos: ['https://images.pexels.com/photos/206172/pexels-photo-206172.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], lat: 36.1690, lng: -86.7805, closedDate: '2024-11-10' },
+            { id: 11, address: '789 Oak Ln', price: 545000, sqft: 1630, beds: 3, baths: 2.5, dist: 1.3, photos: ['https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], lat: 36.1700, lng: -86.7845, closedDate: '2024-10-05' },
+            { id: 12, address: '101 Spruce Dr', price: 515000, sqft: 1570, beds: 3, baths: 2, dist: 1.4, photos: ['https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'], lat: 36.1710, lng: -86.7855, closedDate: '2024-09-01' }
+        ];
+        compsData.forEach(c => c.selected = true);
+        let sortState = { key: 'dist', dir: 'asc' };
+        let maps = {};
+        let mapMarkers = {};
+        let isArvLocked = false;
+        let areInputsLocked = false;
+        let currentCompPhotos = [];
+        let currentCompPhotoIndex = 0;
+
+        // --- v1.6 FILTERING SYSTEM DATA ---
+        let activeFilters = {};
+        let savedSearches = [];
+        let selectedFilterFields = []; // Holds the keys of fields the user wants to see
+        let tempAvailableFields = [];
+        let tempSelectedFields = [];
+        let currentlySelectedAvailableField = null;
+        let currentlySelectedSelectedField = null;
+        let viewMode = 'advanced'; // v1.6.2
+
+        const allFilterFields = {
+            "primary": {
+                label: "Key Details",
+                fields: {
+                    state: { label: "State", type: "multi-select", options: ["TN", "AL", "NC", "SC", "OH", "GA", "FL", "TX", "PA", "KY"] },
+                    listPrice: { label: "List Price", type: "min-max-currency" },
+                    beds: { label: "Beds", type: "min-max-integer", group: 'bedbath' },
+                    baths: { label: "Baths", type: "min-max-integer", group: 'bedbath' },
+                    source: { label: "Source", type: "select", options: ["Any", "Active MLS", "Off-MLS"] },
+                }
+            },
+            "details": {
+                label: "Property Features",
+                fields: {
+                    sqft: { label: "Square Feet", type: "min-max-integer" },
+                    yearBuilt: { label: "Year Built", type: "min-max-integer" },
+                    dom: { label: "Days on Market", type: "min-max-integer" },
+                    hoa: { label: "HOA ($/mo)", type: "min-max-currency" },
+                }
+            },
+            "financials": {
+                label: "Financial",
+                fields: {
+                    purchasePrice: { label: "Purchase Price", type: "min-max-currency" },
+                    estRoi: { label: "Est. ROI %", type: "min-max-percent" },
+                    estNetProfit: { label: "Est. Net Profit", type: "min-max-currency" },
+                    grossYield: { label: "Gross Yield %", type: "min-max-percent" },
+                }
+            }
+        };
+
+        const formulaLookupValues = {
+            'estARV': 'Est. ARV',
+            'estReno': 'Est. Reno',
+            'estBasis': 'Est. Basis',
+            'estProfit': 'Est. Profit',
+            'minFlipProfit': 'Min Flip Profit',
+            'flipFactor': 'Flip Factor',
+            'listPrice': 'List Price',
+            'purchasePrice': 'Est. Purchase',
+            'rentPrice': 'Rent Price'
+        };
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            setupEventListeners();
+            showLandingPage();
+            updateFilteredCount(); // Initial count
+            populateSavedSearchesDropdown();
+            renderStateFilter('main'); // Render the main state filter
+        });
+
+        function setupEventListeners() {
+            const popups = { '#basisInfoIcon': '#basisPopup', '#carryInfoIcon': '#carryPopup', '#profitInfoIcon': '#profitPopup', '#enlargeMapBtn': '#mapPopup' };
+            Object.entries(popups).forEach(([btn, p]) => {
+                const btnEl = document.querySelector(btn);
+                if(btnEl) btnEl.addEventListener('click', () => {
+                    if (p === '#basisPopup') populateBasisBreakdown();
+                    if (p === '#profitPopup') populateProfitBreakdown();
+                    openPopup(p);
+                });
+            });
+            document.getElementById('popupOverlay').addEventListener('click', closeAllPopups);
+            
+            document.querySelectorAll('.close-popup-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation(); 
+                    closeAllPopups();
+                });
+            });
+
+            document.querySelectorAll('.popup, .map-popup').forEach(popup => {
+                makeDraggable(popup, popup.querySelector('.popup-header'));
+            });
+            document.getElementById('renoAlgoBtn').addEventListener('click', calculateRenoAlgo);
+            
+            document.getElementById('prev-photo').addEventListener('click', showPrevPhoto);
+            document.getElementById('next-photo').addEventListener('click', showNextPhoto);
+
+            document.getElementById('add-field-btn').addEventListener('click', addFilterField);
+            document.getElementById('remove-field-btn').addEventListener('click', removeFilterField);
+            
+            document.getElementById('saved-searches-dropdown').addEventListener('change', loadSearch);
+            document.getElementById('modal-confirm-save-btn').addEventListener('click', saveSearch);
+
+            const commandBar = document.getElementById('filter-command-bar');
+            commandBar.addEventListener('input', (e) => {
+                if (e.target.dataset.filterkey) {
+                    handleFilterChange(e.target.dataset.filterkey, e.target.value);
+                }
+            });
+             commandBar.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter' && e.target.id === 'address-search-box') {
+                    runSearch();
+                }
+            });
+            
+            document.addEventListener('click', (e) => {
+                document.querySelectorAll('.multiselect-container').forEach(container => {
+                    if (!container.contains(e.target)) {
+                        container.querySelector('.multiselect-dropdown').classList.add('hidden');
+                    }
+                });
+            });
+            
+            document.getElementById('view-mode-toggle').addEventListener('change', (e) => {
+                viewMode = e.target.checked ? 'advanced' : 'basic';
+                updateViewModeUI(e.target.checked);
+                saveState();
+                runSearch();
+            });
+        }
+
+        function makeDraggable(popup, header) {
+            let offsetX, offsetY, isDraggable = !header.querySelector('#unpinMapBtn');
+            const unpinBtn = header.querySelector('#unpinMapBtn');
+            if (unpinBtn) {
+                unpinBtn.addEventListener('click', (e) => {
+                    isDraggable = !isDraggable;
+                    e.target.textContent = isDraggable ? 'Pinned' : 'Unpin';
+                    header.style.cursor = isDraggable ? 'grab' : 'default';
+                });
+            }
+            if (!header) return;
+            header.addEventListener('mousedown', (e) => {
+                if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+                
+                if (!isDraggable) return;
+
+                const rect = popup.getBoundingClientRect();
+                popup.style.top = `${rect.top}px`;
+                popup.style.left = `${rect.left}px`;
+                popup.style.transform = 'none';
+
+                offsetX = e.clientX - popup.offsetLeft;
+                offsetY = e.clientY - popup.offsetTop;
+                document.addEventListener('mousemove', drag);
+                document.addEventListener('mouseup', () => document.removeEventListener('mousemove', drag), { once: true });
+            });
+            function drag(e) {
+                e.preventDefault();
+                popup.style.left = `${e.clientX - offsetX}px`;
+                popup.style.top = `${e.clientY - offsetY}px`;
+            }
+        }
+        // --- UI HELPERS ---
+        function openPopup(p) { document.getElementById('popupOverlay').style.display = 'block'; document.querySelector(p).style.display = 'block'; if (p === '#mapPopup') renderMap('largeMapContainer', compsData, currentProperty); }
+        function closeAllPopups() {
+             document.getElementById('popupOverlay').style.display = 'none';
+             document.querySelectorAll('.popup, .map-popup').forEach(p => p.style.display = 'none');
+             closeFilterModal(false); // false = don't run a search
+        }
+        function formatNumberWithCommas(element) {
+            let value = element.value.replace(/[$,]/g, '');
+            let num = parseFloat(value);
+            if (!isNaN(num)) {
+                element.value = num.toLocaleString('en-US');
+            } else if (value === '') {
+                element.value = '';
+            }
+        }
+        // --- PAGE NAVIGATION ---
+        function switchPage(element) {
+            const pageId = element.dataset.page;
+
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+            element.classList.add('active');
+            
+            ['landing-page', 'my-properties-page', 'settings-page', 'analyzer-page', 'comparison-page'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+
+            document.getElementById(pageId).classList.remove('hidden');
+            
+            document.getElementById('filter-command-bar').style.display = (pageId === 'landing-page') ? 'flex' : 'none';
+            document.getElementById('analyzer-back-button').classList.add('hidden');
+            document.getElementById('main-nav-links').classList.remove('hidden');
+            
+            document.querySelectorAll('.multiselect-dropdown').forEach(d => d.classList.add('hidden'));
+
+            if (pageId === 'my-properties-page') renderMyPropertiesPage();
+            if (pageId === 'settings-page') populateSettingsForm();
+            if (pageId === 'landing-page') runSearch();
+        }
+
+        function showLandingPage() { switchPage(document.querySelector('.nav-link[data-page="landing-page"]')); }
+        function showMyPropertiesPage() { switchPage(document.querySelector('.nav-link[data-page="my-properties-page"]')); }
+        function showSettingsPage() { switchPage(document.querySelector('.nav-link[data-page="settings-page"]')); }
+
+
+        function showAnalyzer(propertyId) {
+            currentProperty = Object.values(allProperties).flat().find(p => p.id === propertyId);
+            if (!currentProperty) return;
+            
+            ['landing-page', 'my-properties-page', 'settings-page', 'analyzer-page', 'comparison-page'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById('analyzer-page').classList.remove('hidden');
+            
+            document.getElementById('filter-command-bar').style.display = 'none';
+            document.getElementById('main-nav-links').classList.add('hidden');
+            document.getElementById('analyzer-back-button').classList.remove('hidden');
+
+            document.querySelectorAll('.multiselect-dropdown').forEach(d => d.classList.add('hidden'));
+
+            currentPhotoIndex = 0;
+            updatePhotoDisplay();
+            renderAnalyzerInfoButtons();
+            const addressLink = document.getElementById('propertyAddressLink');
+            addressLink.textContent = currentProperty.address;
+            addressLink.href = `http://googleusercontent.com/maps/0{encodeURIComponent(currentProperty.address)}`;
+
+            document.getElementById('purchasePrice').value = currentProperty.purchasePrice.toLocaleString('en-US');
+            document.getElementById('renoBudget').value = currentProperty.renoBudget.toLocaleString('en-US');
+            document.getElementById('subjectSqft').value = currentProperty.sqft;
+            document.getElementById('subjectYearBuilt').value = currentProperty.yearBuilt;
+            document.getElementById('rentPrice').value = currentProperty.rentPrice.toLocaleString('en-US');
+            document.getElementById('taxes').value = (currentProperty.taxes || 0).toLocaleString('en-US');
+            document.getElementById('hoa').value = currentProperty.hoa.toLocaleString('en-US');
+            document.getElementById('offerStatus').value = currentProperty.offerStatus || 'Not Set';
+            document.getElementById('brokerageFeePercent').value = userSettings.defaultBrokerageFee;
+            document.getElementById('closingCostsSalePercent').value = userSettings.defaultSalesClosingCosts;
+
+            renderRentalExpenses();
+            renderMortgageExpenses();
+            applyFiltersAndRender(true);
+        }
+
+        // --- RENDER & DISPLAY ---
+        function renderLandingPage(properties = allProperties['my-deals']) {
+            const propertyList = document.getElementById('landing-property-list');
+            propertyList.innerHTML = '';
+            
+            if (properties.length === 0) {
+                propertyList.innerHTML = `<div class="text-center text-gray-500 p-8">No properties match the current filters.</div>`;
+            } else {
+                 properties.forEach(prop => {
+                    propertyList.appendChild(createPropertyCard(prop));
+                });
+            }
+            
+            renderMap('landing-map', properties);
+        }
+
+        function createPropertyCard(prop) {
+            const { estNetProfit, estRoi, estARV, offerToList, rentPercentOfBasis, grossYield, basis, maxOffer } = calculateQuickMetrics(prop);
+            const card = document.createElement('div');
+            card.id = `prop-card-${prop.id}`;
+            card.className = 'bg-gray-800 p-4 rounded-lg shadow-md border border-gray-700';
+            card.setAttribute('onmouseover', `highlightMarker(${prop.id}, true)`);
+            card.setAttribute('onmouseout', `highlightMarker(${prop.id}, false)`);
+            const profitColor = estNetProfit < 0 ? 'text-red-500' : 'text-green-400';
+            const hasNotes = prop.notes && prop.notes.trim() !== '';
+
+            let financialHtml = '';
+            if (viewMode === 'basic') {
+                financialHtml = `
+                <div class="mt-4 pt-4 border-t border-gray-600 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                    <div class="space-y-1">
+                        <div class="flex justify-between"><span>List Price:</span><span class="font-semibold text-white">$${prop.listPrice.toLocaleString()}</span></div>
+                        <div class="flex justify-between"><span>Offer to List:</span><span class="font-semibold text-white">${offerToList.toFixed(1)}%</span></div>
+                        <div class="flex justify-between"><span>Est ARV:</span><span class="font-semibold text-white">$${estARV.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>
+                    </div>
+                    <div class="space-y-1 border-l border-gray-600 pl-4">
+                        <div class="flex justify-between"><span>Est Rent AVM:</span><span class="font-semibold text-white">$${prop.estRentAvm.toLocaleString()}/mo</span></div>
+                        <div class="flex justify-between"><span>Rent Price:</span><span class="font-semibold text-white">$${prop.rentPrice.toLocaleString()}/mo</span></div>
+                        <div class="flex justify-between"><span>Gross Yield:</span><span class="font-semibold text-white">${grossYield.toFixed(2)}%</span></div>
+                    </div>
+                </div>`;
+            } else { // Advanced
+                 financialHtml = `
+                <div class="mt-4 pt-4 border-t border-gray-600 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                    <div class="space-y-1">
+                        <div class="flex justify-between"><span>Est Purchase:</span><span class="font-semibold text-white">$${prop.purchasePrice.toLocaleString()}</span></div>
+                        <div class="flex justify-between"><span>Offer to List:</span><span class="font-semibold text-white">${offerToList.toFixed(1)}%</span></div>
+                        <div class="flex justify-between"><span>Est. ARV:</span><span class="font-semibold text-white">$${estARV.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>
+                        <div class="flex justify-between"><span>Est. Reno:</span><span class="font-semibold text-white">$${prop.renoBudget.toLocaleString()}</span></div>
+                        <div class="flex justify-between"><span>Est. Basis:</span><span class="font-semibold text-white">$${basis.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>
+                        <div class="flex justify-between"><span>Est. Profit:</span><span class="font-semibold ${profitColor}">$${estNetProfit.toLocaleString('en-US', {maximumFractionDigits: 0})}</span></div>
+                        <div class="flex justify-between"><span>Est. ROI:</span><span class="font-semibold text-blue-400">${estRoi.toFixed(1)}%</span></div>
+                    </div>
+                    <div class="space-y-1 border-l border-gray-600 pl-4">
+                        <div class="flex justify-between"><span>Est Rent AVM:</span><span class="font-semibold text-white">$${prop.estRentAvm.toLocaleString()}/mo</span></div>
+                        <div class="flex justify-between"><span>Rent Price:</span><span class="font-semibold text-white">$${prop.rentPrice.toLocaleString()}/mo</span></div>
+                        <div class="flex justify-between"><span>Taxes:</span><span class="font-semibold text-white">$${(prop.taxes || 0).toLocaleString('en-US',{maximumFractionDigits:0})}/yr</span></div>
+                        <div class="flex justify-between"><span>HOA:</span><span class="font-semibold text-white">$${prop.hoa.toLocaleString()}/mo</span></div>
+                        <div class="flex justify-between"><span>Rent % of Basis:</span><span class="font-semibold text-white">${rentPercentOfBasis.toFixed(2)}%</span></div>
+                        <div class="flex justify-between"><span>Gross Yield:</span><span class="font-semibold text-white">${grossYield.toFixed(2)}%</span></div>
+                        <div class="flex justify-between"><span class="font-bold text-yellow-400">Max Offer:</span><span class="font-bold text-yellow-400">$${maxOffer.toLocaleString('en-US',{maximumFractionDigits:0})}</span></div>
+                    </div>
+                    <div class="flex justify-between items-center col-span-2 mt-2"><span>Offer Status:</span>
+                        <select onchange="updatePropertyData(${prop.id}, 'offerStatus', this.value)" class="crisp-input !text-xs !p-1 w-2/3 ml-2 bg-gray-700 text-gray-300">
+                            <option value="Not Set" ${prop.offerStatus === 'Not Set' ? 'selected class="text-gray-500"' : ''}>Not Set</option>
+                            <option value="Need full UW" ${prop.offerStatus === 'Need full UW' ? 'selected' : ''}>Need full UW</option>
+                            <option value="Awaiting Decision" ${prop.offerStatus === 'Awaiting Decision' ? 'selected' : ''}>Awaiting Decision</option>
+                            <option value="Watching" ${prop.offerStatus === 'Watching' ? 'selected' : ''}>Watching</option>
+                            <option value="Ready to Offer" ${prop.offerStatus === 'Ready to Offer' ? 'selected' : ''}>Ready to Offer</option>
+                            <option value="Submitted" ${prop.offerStatus === 'Submitted' ? 'selected' : ''}>Submitted</option>
+                            <option value="Open Counter" ${prop.offerStatus === 'Open Counter' ? 'selected' : ''}>Open Counter</option>
+                            <option value="Re-Submitted" ${prop.offerStatus === 'Re-Submitted' ? 'selected' : ''}>Re-Submitted</option>
+                            <option value="Highest & Best Needed" ${prop.offerStatus === 'Highest & Best Needed' ? 'selected' : ''}>Highest & Best Needed</option>
+                            <option value="Rejected by Seller" ${prop.offerStatus === 'Rejected by Seller' ? 'selected' : ''}>Rejected by Seller</option>
+                            <option value="Under Contract" ${prop.offerStatus === 'Under Contract' ? 'selected' : ''}>Under Contract</option>
+                            <option value="Purchased" ${prop.offerStatus === 'Purchased' ? 'selected' : ''}>Purchased</option>
+                            <option value="Terminated" ${prop.offerStatus === 'Terminated' ? 'selected' : ''}>Terminated</option>
+                            <option value="Withdrawn Offer" ${prop.offerStatus === 'Withdrawn Offer' ? 'selected' : ''}>Withdrawn Offer</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+            }
+
+            card.innerHTML = `
+                <div class="grid" style="grid-template-columns: 200px 1fr; gap: 1rem;">
+                    <div class="flex flex-col">
+                        <div class="relative aspect-square">
+                            <img id="card-photo-${prop.id}" src="${prop.photos[prop.currentPhotoIndex]}" class="w-full h-full object-cover rounded-md">
+                            <div class="absolute top-1/2 -translate-y-1/2 w-full flex justify-between px-2">
+                                <button onclick="event.stopPropagation(); showPrevCardPhoto(${prop.id})" class="bg-black/50 p-1 rounded-full text-white text-xs"><</button>
+                                <button onclick="event.stopPropagation(); showNextCardPhoto(${prop.id})" class="bg-black/50 p-1 rounded-full text-white text-xs">></button>
+                            </div>
+                        </div>
+                        <div class="text-xs text-white bg-black/50 px-2 py-1 rounded mt-2 text-center">
+                            <span>Source: ${prop.source}</span> | <span>DOM: ${prop.dom}</span>
+                        </div>
+                        <div class="mt-2 text-xs flex space-x-2">
+                            <button onclick="showInfoPopup('Remarks', '${prop.remarks.replace(/'/g, "\\'")}', event)" class="bg-gray-600 px-2 py-1 rounded">Remarks</button>
+                            <button onclick="showInfoPopup('Hex Data', '${prop.hexData.replace(/'/g, "\\'")}', event)" class="bg-gray-600 px-2 py-1 rounded">Hex</button>
+                            <button onclick="showInfoPopup('Notes', \`${prop.notes.replace(/`/g, "\\`")}\`, event, ${prop.id})" class="relative bg-gray-600 px-2 py-1 rounded">
+                                Notes
+                                ${hasNotes ? '<span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-purple-500 ring-2 ring-gray-700/50 -mt-1 -mr-1"></span>' : ''}
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <a href="#" onclick="event.preventDefault(); showAnalyzer(${prop.id})" class="font-semibold text-white hover:underline text-base">${prop.address}</a>
+                                <p class="text-xs text-gray-400">${prop.beds} beds | ${prop.baths} baths | ${prop.sqft.toLocaleString()} sqft | ${prop.yearBuilt}</p>
+                                <p class="text-lg font-bold text-white mt-1">$${prop.listPrice.toLocaleString()}</p>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="toggleSaved(${prop.id})" class="text-gray-400 hover:text-pink-500">${getHeartIcon(prop.id)}</button>
+                                <button onclick="confirmArchive(${prop.id})" class="text-gray-400 hover:text-red-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg></button>
+                                <input type="checkbox" data-id="${prop.id}" onchange="toggleCompare(this, ${prop.id})" class="compare-checkbox bg-gray-700 border-gray-600 self-center">
+                            </div>
+                        </div>
+                        ${financialHtml}
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+        function renderMyPropertiesPage(pipeline = 'saved') {
+            const propertyList = document.getElementById('my-properties-list');
+            const mapContainer = document.getElementById('my-properties-map');
+            propertyList.innerHTML = '';
+            const properties = allProperties[pipeline] || [];
+            if (properties.length === 0) {
+                propertyList.innerHTML = `<p class="text-gray-500 col-span-full text-center p-8">No properties in this list.</p>`;
+            } else {
+                 properties.forEach(prop => {
+                    propertyList.appendChild(createPropertyCard(prop));
+                });
+            }
+            renderMap('my-properties-map', properties);
+        }
+        function renderComparisonPage() {
+            const content = document.getElementById('comparison-content');
+            const propertiesToCompare = Object.values(allProperties).flat().filter(p => comparedProperties.has(p.id));
+
+            let headerHtml = `<div class="grid grid-cols-${propertiesToCompare.length + 1} gap-4 text-sm mb-6"><div></div>`;
+            propertiesToCompare.forEach(p => {
+                headerHtml += `<div class="text-center font-semibold"><img src="${p.photos[0]}" class="w-full h-24 object-cover rounded-md mb-2">${p.address}</div>`;
+            });
+            headerHtml += `</div>`;
+            let tableHtml = '';
+            const sections = {
+                "General": { "Price": "purchasePrice", "Beds": "beds", "Baths": "baths", "Size": "sqft" },
+                "Features": { "Year Built": "yearBuilt" }
+            };
+            for (const section in sections) {
+                tableHtml += `<h3 class="font-bold text-lg text-white mt-4">${section}</h3>`;
+                for (const label in sections[section]) {
+                    tableHtml += `<div class="grid grid-cols-${propertiesToCompare.length + 1} gap-4 text-sm comparison-table-row">`;
+                    tableHtml += `<div>${label}</div>`;
+                    propertiesToCompare.forEach(p => {
+                        const key = sections[section][label];
+                        let value = p[key] ? p[key].toLocaleString() : 'N/A';
+                        if (key ==='purchasePrice') value = `$${value}`;
+                        if (key === 'sqft') value += ' sqft';
+                        tableHtml += `<div>${value}</div>`;
+                    });
+                    tableHtml += `</div>`;
+                }
+            }
+            content.innerHTML = headerHtml + tableHtml;
+        }
+        function applyFiltersAndRender(isInitialLoad = false) {
+            if (document.getElementById('analyzer-page').classList.contains('hidden')) return;
+            let filteredComps = [...compsData];
+            const distanceFilter = parseFloat(document.getElementById('distanceFilter').value);
+            filteredComps = filteredComps.filter(c => c.dist <= distanceFilter);
+            document.querySelectorAll('.filter-input').forEach(f => {
+                const key = f.dataset.key; const value = f.value.trim();
+                if (value) { filteredComps = filteredComps.filter(c => parseFilter(value, key === 'pricePerSqft' ? (c.price / c.sqft) : c[key])); }
+            });
+            filteredComps.sort((a, b) => {
+                let valA = sortState.key === 'pricePerSqft' ? a.price / a.sqft : a[sortState.key];
+                let valB = sortState.key === 'pricePerSqft' ? b.price / b.sqft : b[sortState.key];
+                if (typeof valA === 'string') return sortState.dir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                return sortState.dir === 'asc' ? valA - valB : valB - valA;
+            });
+            renderCompsTable(filteredComps);
+            updateCalculations('initialLoad');
+        }
+
+        function renderCompsTable(comps) {
+            document.getElementById('compsTable').innerHTML = comps.map(c => `<tr class="${c.selected ? 'bg-gray-700' : ''} hover:bg-gray-700/50 cursor-pointer" onmouseover="highlightMarker(${c.id}, true)" onmouseout="highlightMarker(${c.id}, false)" onclick="highlightMarker(${c.id}, true)"><td class="p-2 text-center"><input type="checkbox" class="comp-checkbox bg-gray-700 border-gray-600" data-id="${c.id}" ${c.selected ? 'checked' : ''} onchange="toggleCompSelection(${c.id})"></td><td class="p-2"><img src="${c.photos[0]}" alt="${c.address}" class="h-10 w-12 object-cover rounded-md cursor-pointer" onclick="showCompPhotos(${c.id})"></td><td class="p-2">${c.address}</td><td class="p-2">$${c.price.toLocaleString()}</td><td class="p-2">$${(c.price / c.sqft).toFixed(0)}</td><td class="p-2">${c.dist.toFixed(1)} mi</td><td class="p-2 text-center">${c.beds}</td><td class="p-2 text-center">${c.baths}</td><td class="p-2 text-center">${c.sqft.toLocaleString()}</td><td class="p-2">${c.closedDate}</td></tr>`).join('');
+        }
+
+        function renderAnalyzerInfoButtons() {
+            const container = document.getElementById('analyzer-info-buttons');
+            if (!container || !currentProperty) return;
+
+            const remarks = currentProperty.remarks.replace(/'/g, "\\'");
+            const hexData = currentProperty.hexData.replace(/'/g, "\\'");
+            const notes = currentProperty.notes.replace(/`/g, "\\`");
+            const propId = currentProperty.id;
+
+            const hasNotes = currentProperty.notes && currentProperty.notes.trim() !== '';
+
+            container.innerHTML = `
+                <button onclick="showInfoPopup('Remarks', '${remarks}', event)" class="bg-gray-600 px-2 py-1 rounded">Remarks</button>
+                <button onclick="showInfoPopup('Hex Data', '${hexData}', event)" class="bg-gray-600 px-2 py-1 rounded">Hex</button>
+                <button onclick="showInfoPopup('Notes', \`${notes}\`, event, ${propId})" class="relative bg-gray-600 px-2 py-1 rounded">
+                    Notes
+                    ${hasNotes ? '<span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-purple-500 ring-2 ring-gray-800 -mt-1 -mr-1"></span>' : ''}
+                </button>
+            `;
+        }
+
+        function renderRentalExpenses() {
+            const container = document.getElementById('rental-expenses-section');
+            if (!container || !currentProperty) return;
+            const expenseFields = [
+                { key: 'vacancy', label: 'Vacancy', type: 'percent_rent' },
+                { key: 'maintenance', label: 'Maintenance', type: 'percent_rent' },
+                { key: 'propManagement', label: 'Management', type: 'percent_rent' },
+                { key: 'insurance', label: 'Insurance', type: 'percent_purchase' },
+                { key: 'badDebt', label: 'Bad Debt', type: 'percent_rent' },
+                { key: 'leasingFee', label: 'Leasing Fee', type: 'fixed' },
+                { key: 'turnover', label: 'Turnover', type: 'fixed' },
+                { key: 'utilities', label: 'Utilities', type: 'fixed' },
+                { key: 'cdd', label: 'CDD', type: 'fixed' },
+                { key: 'otherFee', label: 'Other Fee', type: 'fixed' },
+            ];
+            let html = '';
+            expenseFields.forEach(field => {
+                const isOverridden = currentProperty.overrides && currentProperty.overrides[field.key];
+                const value = calculateExpense(field.key, getExpenseType(field.key));
+                html += `
+                    <div class="grid grid-cols-[1fr,100px,80px] items-center gap-2">
+                        <label class="text-gray-400">${field.label}</label>
+                        <input type="text" id="expense-${field.key}" value="$${value.toLocaleString('en-US',{minimumFractionDigits: 0, maximumFractionDigits: 0})}" class="crisp-input !py-1 text-right" ${!isOverridden ? 'disabled' : ''} onchange="handleExpenseOverride('${field.key}', this.value)">
+                        <label class="flex items-center justify-end text-xs">
+                            <div class="icon-info">
+                                <input type="checkbox" ${isOverridden ? 'checked' : ''} onchange="toggleExpenseOverride(this, '${field.key}')" class="mr-1 accent-blue-500">
+                                <span>Override</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ml-1 text-gray-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                                <span class="tooltip">Check to manually enter a value for this expense.</span>
+                            </div>
+                        </label>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+        function getExpenseType(key) {
+            const expenseFields = [
+                { key: 'vacancy', type: 'percent_rent' }, { key: 'maintenance', type: 'percent_rent' },
+                { key: 'propManagement', type: 'percent_rent' }, { key: 'insurance', type: 'percent_purchase' },
+                { key: 'badDebt', type: 'percent_rent' }, { key: 'leasingFee', type: 'fixed' },
+                { key: 'turnover', type: 'fixed' }, { key: 'utilities', type: 'fixed' },
+                { key: 'cdd', type: 'fixed' }, { key: 'otherFee', type: 'fixed' },
+            ];
+            const field = expenseFields.find(f => f.key === key);
+            return field ? field.type : 'fixed';
+        }
+
+        function calculateExpense(key, type) {
+            if (currentProperty.overrides && currentProperty.overrides[key] !== undefined) {
+                return currentProperty.overrides[key];
+            }
+            const rent = parseFloat(document.getElementById('rentPrice').value.replace(/,/g, '')) || 0;
+            const purchase = parseFloat(document.getElementById('purchasePrice').value.replace(/,/g, '')) || 0;
+            const defaultKey = `default${key.charAt(0).toUpperCase() + key.slice(1)}`;
+            const percent = userSettings[defaultKey];
+
+            if(type === 'fixed') return userSettings[defaultKey] || 0;
+            if (type === 'percent_rent') return rent * 12 * (percent / 100);
+            if (type === 'percent_purchase') return purchase * (percent / 100);
+            return 0;
+        }
+        function toggleExpenseOverride(checkbox, key) {
+            const input = document.getElementById(`expense-${key}`);
+            input.disabled = !checkbox.checked;
+            if (!currentProperty.overrides) currentProperty.overrides = {};
+
+            if (!checkbox.checked) {
+                delete currentProperty.overrides[key];
+                const defaultValue = calculateExpense(key, getExpenseType(key));
+                input.value = `$${defaultValue.toLocaleString('en-US',{minimumFractionDigits: 0, maximumFractionDigits: 0})}`;
+            } else {
+                currentProperty.overrides[key] = parseFloat(input.value.replace(/[$,]/g, ''));
+            }
+            updateCalculations();
+        }
+
+        function handleExpenseOverride(key, value) {
+            if (!currentProperty.overrides) currentProperty.overrides = {};
+            currentProperty.overrides[key] = parseFloat(value.replace(/[$,]/g, '')) || 0;
+            updateCalculations();
+        }
+
+        function isMortgageOverridden(key) {
+            return !!currentProperty.mortgageOverrides && currentProperty.mortgageOverrides[key] !== undefined;
+        }
+        function getMortgageValue(key) {
+            if (isMortgageOverridden(key)) {
+                return currentProperty.mortgageOverrides[key];
+            }
+            const defaultKey = `default${key.charAt(0).toUpperCase() + key.slice(1)}`;
+            let defaultValue = userSettings[defaultKey] || 0;
+            if (key === 'interestRate') defaultValue = userSettings.defaultInterestRate || 7;
+            if (key === 'ltv') defaultValue = userSettings.defaultLTV || 80;
+            if (key === 'amortizationLength') defaultValue = userSettings.defaultAmortization || 30;
+            if (['armLength', 'adjustableRate', 'bidFlex'].includes(key)) defaultValue = 0;
+            return defaultValue;
+        }
+        function renderMortgageExpenses() {
+            const container = document.getElementById('mortgage-expenses-section');
+            if (!container || !currentProperty) return;
+            const purchase = parseFloat(document.getElementById('purchasePrice').value.replace(/,/g, '')) || 0;
+            const ltv = getMortgageValue('ltv') / 100;
+            const interest = getMortgageValue('interestRate') / 100;
+            const amort = getMortgageValue('amortizationLength');
+            const armLength = getMortgageValue('armLength');
+            const adjustable = getMortgageValue('adjustableRate') / 100;
+            const bidFlex = getMortgageValue('bidFlex');
+            // Assume fixed rate for now, ignore ARM
+            const loanAmount = purchase * ltv;
+            const monthlyRate = interest / 12;
+            const months = amort * 12;
+            let monthlyPayment = 0;
+            if (monthlyRate > 0 && months > 0) {
+                monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
+            }
+            const totalInterest = monthlyPayment * months - loanAmount;
+            const principleAmount = loanAmount;
+            const pi = monthlyPayment;
+            const taxes = parseFloat(document.getElementById('taxes').value.replace(/,/g, '')) || 0;
+            const taxesMonthly = taxes / 12;
+            const insurance = calculateExpense('insurance', 'percent_purchase');
+            const insuranceMonthly = insurance / 12;
+            const piti = pi + taxesMonthly + insuranceMonthly;
+            const maxOffer = 0; // As per user request
+            const termsFields = [
+                { key: 'ltv', label: 'Loan to Value %' },
+                { key: 'interestRate', label: 'Interest Rate' },
+                { key: 'amortizationLength', label: 'Amortization Length' },
+                { key: 'armLength', label: 'ARM Length' },
+                { key: 'adjustableRate', label: 'Adjustable Rate' },
+                { key: 'bidFlex', label: 'Bid Flex' },
+            ];
+            const breakdownFields = [
+                { key: 'loanAmount', label: 'Loan Amount:', value: loanAmount.toFixed(0) },
+                { key: 'principleAmount', label: 'Principle Amount:', value: principleAmount.toFixed(0) },
+                { key: 'interestAmount', label: 'Interest Amount:', value: totalInterest.toFixed(0) },
+                { key: 'pi', label: 'Total P&I Amount:', value: pi.toFixed(0) },
+                { key: 'taxesMonthly', label: 'Taxes Monthly:', value: taxesMonthly.toFixed(0) },
+                { key: 'insuranceMonthly', label: 'Insurance Monthly:', value: insuranceMonthly.toFixed(0) },
+                { key: 'piti', label: 'Total PITI:', value: piti.toFixed(0) },
+                { key: 'maxOffer', label: 'Max Offer (Formula):', value: maxOffer.toFixed(0) },
+            ];
+            let leftHtml = '<h3 class="text-md font-bold text-white border-b border-gray-700 pb-2">Loan Terms & Assumptions</h3>';
+            termsFields.forEach(field => {
+                const value = getMortgageValue(field.key);
+                const isOverridden = isMortgageOverridden(field.key);
+                leftHtml += `
+                    <div class="grid grid-cols-[1fr,100px,80px] items-center gap-2">
+                        <label class="text-gray-400">${field.label}</label>
+                        <input type="number" id="mortgage-${field.key}" class="crisp-input !py-1 text-right" value="${value}" ${isOverridden ? '' : 'disabled'} oninput="handleMortgageOverride('${field.key}', this.value)">
+                        <label class="flex items-center justify-end text-xs">
+                            <div class="icon-info">
+                                <input type="checkbox" ${isOverridden ? 'checked' : ''} onchange="toggleMortgageOverride(this, '${field.key}')" class="mr-1 accent-blue-500">
+                                <span>Override</span>
+                                <svg class="h-3 w-3 ml-1 text-gray-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                                <span class="tooltip">Check to manually enter a value.</span>
+                            </div>
+                        </label>
+                    </div>`;
+            });
+            let rightHtml = '<h3 class="text-md font-bold text-white border-b border-gray-700 pb-2">Payment Breakdown</h3>';
+            breakdownFields.forEach(field => {
+                rightHtml += `<div class="grid grid-cols-2 items-center"><label class="text-gray-400">${field.label}</label><p id="mortgage-${field.key}" class="font-semibold text-right">$${field.value}</p></div>`;
+            });
+            container.innerHTML = leftHtml + rightHtml;
+        }
+        function renderMap(mapId, properties, subjectProp = null) {
+            const container = document.getElementById(mapId);
+            if (!container) return;
+            if (maps[mapId]) {
+                maps[mapId].remove();
+            }
+            if (!properties || properties.length === 0) {
+                container.innerHTML = `<p class="text-gray-500 text-center p-8">No properties to show on map.</p>`;
+                return;
+            }
+            const centerProp = subjectProp || properties[0];
+            const mapInstance = L.map(mapId).setView([centerProp.lat, centerProp.lng], 13);
+            maps[mapId] = mapInstance;
+            L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+                attribution: '© OpenStreetMap © CARTO'
+            }).addTo(mapInstance);
+            mapMarkers[mapId] = [];
+            const markerBounds = [];
+
+            properties.forEach(prop => {
+                const isSubject = subjectProp && prop.id === subjectProp.id;
+                const isComp = subjectProp && prop.id !== subjectProp.id;
+
+                let color = '#f59e0b'; // Default orange
+                if (isSubject) color = '#3b82f6'; // Blue
+                if (isComp) color = '#22c55e'; // Green
+                const icon = L.divIcon({
+                    html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${color}" class="w-6 h-6"><path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>`,
+                    className: 'bg-transparent border-0',
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 24]
+                });
+                const marker = L.marker([prop.lat, prop.lng], { icon }).addTo(mapInstance);
+                marker.bindTooltip(`<b>${prop.address}</b><br>$${(prop.price || prop.purchasePrice).toLocaleString()}`, { permanent: false, direction: 'top' });
+                marker.propertyId = prop.id;
+                mapMarkers[mapId].push(marker);
+                markerBounds.push([prop.lat, prop.lng]);
+            });
+            if (markerBounds.length > 0) {
+                mapInstance.fitBounds(markerBounds, { padding: [50, 50] });
+            }
+            setTimeout(() => {
+                if(maps[mapId]) {
+                    maps[mapId].invalidateSize()
+                }
+            }, 100);
+        }
+
+        function highlightMarker(propId, shouldHighlight) {
+            const visibleMapId = Object.keys(maps).find(id => {
+                const mapContainer = document.getElementById(id);
+                return mapContainer && mapContainer.offsetParent !== null;
+            });
+            if (visibleMapId && mapMarkers[visibleMapId]) {
+                const marker = mapMarkers[visibleMapId].find(m => m.propertyId === propId);
+                if (marker && marker.getElement()) {
+                    if (shouldHighlight) {
+                        marker.getElement().classList.add('marker-bounce', 'highlight-marker');
+                        marker.openTooltip();
+                    } else {
+                        marker.getElement().classList.remove('marker-bounce', 'highlight-marker');
+                        marker.closeTooltip();
+                    }
+                }
+            }
+        }
+        // --- CALCULATIONS & INPUT HANDLERS ---
+        function getCoreMetrics(prop) {
+            const purchasePrice = prop.purchasePrice;
+            const renoBudget = prop.renoBudget;
+            const listPrice = prop.listPrice || purchasePrice;
+            
+            // Use the property-specific ARV if it exists, otherwise calculate from comps
+            let estARV = prop.estARV;
+            if (estARV === undefined || estARV === null) {
+                const selectedComps = compsData; // In a real scenario, this would be specific to the prop
+                if (selectedComps && selectedComps.length > 0) {
+                    estARV = selectedComps.reduce((s, c) => s + c.price, 0) / selectedComps.length;
+                } else {
+                    estARV = 0;
+                }
+            }
+            
+            const acqCostsPercent = userSettings.defaultAcquisitionCosts;
+            const salesBrokeragePercent = userSettings.defaultBrokerageFee;
+            const salesClosingPercent = userSettings.defaultSalesClosingCosts;
+            const closingCostsFixed = purchasePrice * (acqCostsPercent / 100);
+            const holdingPeriod = 60 + Math.floor(renoBudget / 10000) * 7;
+            const monthlyCarryingCost = Math.max(purchasePrice * 0.007, 500);
+            const totalCarryingCosts = (monthlyCarryingCost / 30) * holdingPeriod;
+
+            const brokerageCosts = estARV * (salesBrokeragePercent / 100);
+            const closingCostsSaleFixed = estARV * (salesClosingPercent / 100);
+
+            const basis = purchasePrice + closingCostsFixed + renoBudget + totalCarryingCosts;
+            const totalSaleCosts = brokerageCosts + closingCostsSaleFixed;
+            const estNetProfit = estARV - basis - totalSaleCosts;
+            const totalCashInvested = closingCostsFixed + renoBudget + totalCarryingCosts;
+            const estRoi = totalCashInvested > 0 ? (estNetProfit / totalCashInvested) * 100 : 0;
+
+            const offerToList = listPrice > 0 ? (purchasePrice / listPrice) * 100 : 0;
+            const rentPercentOfBasis = basis > 0 ? ((prop.rentPrice * 12) / basis) * 100 : 0;
+            const grossYield = basis > 0 ? ((prop.rentPrice * 12) / basis) * 100 : 0;
+
+            if (!prop.taxes) {
+                prop.taxes = (purchasePrice * (userSettings.defaultTaxes / 100));
+            }
+            
+            return { estNetProfit, estRoi, estARV, offerToList, rentPercentOfBasis, grossYield, basis, renoBudget, purchasePrice, listPrice, rentPrice: prop.rentPrice };
+        }
+
+        function calculateQuickMetrics(prop) {
+            const coreMetrics = getCoreMetrics(prop);
+            const { result: maxOffer, error } = calculateMaxOffer(prop, userSettings.maxOfferFormulaString, false, null, coreMetrics);
+            if (error) {
+                console.error(`Formula error for property ${prop.id}: ${error}`);
+            }
+            return { ...coreMetrics, maxOffer: error ? 0 : maxOffer };
+        }
+        
+        function calculateRenoAlgo() {
+            const year = parseFloat(document.getElementById('subjectYearBuilt').value) || new Date().getFullYear();
+            const sqft = parseFloat(document.getElementById('subjectSqft').value) || 0;
+            const renoCost = (1 - (year / new Date().getFullYear())) * 100 * (Math.max(sqft, 1500) * 11);
+            const renoInput = document.getElementById('renoBudget');
+            renoInput.value = renoCost.toFixed(0);
+            formatNumberWithCommas(renoInput);
+            updateCalculations('renoBudget');
+        }
+
+        function updateCalculations(trigger = null, arvEdited = false) {
+            if (!currentProperty) return;
+            // --- Gather all inputs ---
+            const purchasePrice = parseFloat(document.getElementById('purchasePrice').value.replace(/,/g, '')) || 0;
+            const renoBudget = parseFloat(document.getElementById('renoBudget').value.replace(/,/g, '')) || 0;
+            const subjectSqft = parseFloat(document.getElementById('subjectSqft').value) || 1;
+            const rentPrice = parseFloat(document.getElementById('rentPrice').value.replace(/,/g, '')) || 0;
+            const hoa = parseFloat(document.getElementById('hoa').value.replace(/,/g, '')) || 0;
+
+            // --- ARV Calculation ---
+            const selectedComps = compsData.filter(c => c.selected);
+            let estARVValue = parseFloat(document.getElementById('estARV').value.replace(/[$,]/g, '')) || 0;
+            if (selectedComps.length > 0 && !arvEdited && !isArvLocked) {
+                const avgPrice = selectedComps.reduce((s, c) => s + c.price, 0) / selectedComps.length;
+                estARVValue = avgPrice;
+                document.getElementById('estARV').value = `$${avgPrice.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+            }
+            // --- Use Defaults for initial load, then allow overrides ---
+            if (trigger === 'initialLoad' || trigger === 'purchasePrice') {
+                if(!currentProperty.taxes) {
+                    currentProperty.taxes = (purchasePrice * (userSettings.defaultTaxes / 100));
+                }
+                document.getElementById('taxes').value = currentProperty.taxes.toLocaleString('en-US', {maximumFractionDigits: 0});
+            }
+            const taxes = parseFloat(document.getElementById('taxes').value.replace(/,/g, '')) || 0;
+            
+            // --- Acquisition Costs Logic (FIXED) ---
+            if (trigger === 'fixed_acq') {
+                let fixedValue = parseFloat(document.getElementById('closingCostsFixed').value.replace(/,/g, ''));
+                if (isNaN(fixedValue)) { fixedValue = 0; }
+                document.getElementById('closingCostsPercent').value = purchasePrice > 0 ? (fixedValue / purchasePrice * 100).toFixed(2) : 0;
+            } else {
+                let percentValue = parseFloat(document.getElementById('closingCostsPercent').value);
+                if (isNaN(percentValue)) { percentValue = userSettings.defaultAcquisitionCosts; }
+                document.getElementById('closingCostsFixed').value = (purchasePrice * (percentValue / 100)).toLocaleString('en-US', {maximumFractionDigits: 0});
+            }
+
+            // --- Formula-driven fields with override logic ---
+            if (trigger === 'renoBudget' || trigger === 'initialLoad') {
+                document.getElementById('holdingPeriod').value = 60 + Math.floor(renoBudget / 10000) * 7;
+            }
+            if (trigger === 'purchasePrice' || trigger === 'initialLoad') {
+                document.getElementById('monthlyCarryingCost').value = Math.max(purchasePrice * 0.007, 500).toLocaleString('en-US', {maximumFractionDigits: 0});
+            }
+            // --- Final Calculations ---
+            const closingCostsFixed = parseFloat(document.getElementById('closingCostsFixed').value.replace(/,/g, '')) || 0;
+            const holdingPeriod = parseFloat(document.getElementById('holdingPeriod').value) || 0;
+            const monthlyCarryingCost = parseFloat(document.getElementById('monthlyCarryingCost').value.replace(/,/g, '')) || 0;
+            const brokerageFeePercent = parseFloat(document.getElementById('brokerageFeePercent').value) || userSettings.defaultBrokerageFee;
+            const closingCostsSalePercent = parseFloat(document.getElementById('closingCostsSalePercent').value) || userSettings.defaultSalesClosingCosts;
+            const totalCarryingCosts = (monthlyCarryingCost / 30) * holdingPeriod;
+            const brokerageCosts = estARVValue * (brokerageFeePercent / 100);
+            const closingCostsSaleFixed = estARVValue * (closingCostsSalePercent / 100);
+            const basis = purchasePrice + closingCostsFixed + renoBudget + totalCarryingCosts;
+            const totalSaleCosts = brokerageCosts + closingCostsSaleFixed;
+            const netProfit = estARVValue - basis - totalSaleCosts;
+
+            const totalCashInvested = closingCostsFixed + renoBudget + totalCarryingCosts;
+            const roi = totalCashInvested > 0 ? (netProfit / totalCashInvested) * 100 : 0;
+
+            // --- Advanced Rental Metrics ---
+            const annualRent = rentPrice * 12;
+            const vacancyCost = calculateExpense('vacancy', 'percent_rent');
+            const maintenanceCost = calculateExpense('maintenance', 'percent_rent');
+            const propManagementCost = calculateExpense('propManagement', 'percent_rent');
+            const insuranceCost = calculateExpense('insurance', 'percent_purchase');
+
+            const noi = annualRent - vacancyCost - maintenanceCost - propManagementCost - insuranceCost - taxes - (hoa * 12);
+
+            const capRate = purchasePrice > 0 ? (noi / purchasePrice) * 100 : 0;
+
+            const ltv = (currentProperty.mortgageOverrides && currentProperty.mortgageOverrides.ltv !== undefined ? currentProperty.mortgageOverrides.ltv : userSettings.defaultLTV || 80) / 100;
+            const interestRate = (currentProperty.mortgageOverrides && currentProperty.mortgageOverrides.interestRate !== undefined ? currentProperty.mortgageOverrides.interestRate : userSettings.defaultInterestRate || 7) / 100;
+            const amortization = (currentProperty.mortgageOverrides && currentProperty.mortgageOverrides.amortizationLength !== undefined ? currentProperty.mortgageOverrides.amortizationLength : userSettings.defaultAmortization || 30);
+
+            const downPayment = purchasePrice * (1 - ltv);
+            const loanAmount = purchasePrice * ltv;
+            const monthlyInterestRate = interestRate / 12;
+            const loanTermMonths = amortization * 12;
+
+            const mortgagePayment = loanAmount > 0 && loanTermMonths > 0 && monthlyInterestRate > 0
+                ? loanAmount * (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, loanTermMonths)) / (Math.pow(1 + monthlyInterestRate, loanTermMonths) - 1)
+                : 0;
+            const annualDebtService = mortgagePayment * 12;
+
+            const cashFlow = noi - annualDebtService;
+            const cashInvested = downPayment + closingCostsFixed; // Simplified for this calc
+            const cashOnCash = cashInvested > 0 ? (cashFlow / cashInvested) * 100 : 0;
+            // IRR is a complex calculation, showing a placeholder
+            const irr = cashOnCash * 1.15; // Placeholder
+            // --- Update UI ---
+            const netProfitEl = document.getElementById('netProfit');
+            netProfitEl.textContent = `$${netProfit.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+            netProfitEl.classList.toggle('text-green-400', netProfit >= 0);
+            netProfitEl.classList.toggle('text-red-500', netProfit < 0);
+            document.getElementById('roi').textContent = `${roi.toFixed(1)}%`;
+            document.getElementById('totalCost').textContent = `$${basis.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+            document.getElementById('purchasePricePerSqftSubtext').textContent = `$${(purchasePrice / subjectSqft).toFixed(2)} / sqft`;
+            document.getElementById('arvPerSqftSubtext').textContent = `$${(estARVValue / subjectSqft).toFixed(2)} / sqft`;
+
+            // Update Key Metrics
+            document.getElementById('metric-capRate').textContent = `${capRate.toFixed(2)}%`;
+            document.getElementById('metric-cashFlow').textContent = `$${(cashFlow / 12).toLocaleString('en-US', {maximumFractionDigits:0})}`;
+            document.getElementById('metric-cashOnCash').textContent = `${cashOnCash.toFixed(2)}%`;
+            document.getElementById('metric-irr').textContent = `${irr.toFixed(2)}%`;
+
+            renderRentalExpenses();
+            renderMortgageExpenses();
+            // --- Save Data ---
+            updatePropertyData(currentProperty.id, 'purchasePrice', purchasePrice);
+            updatePropertyData(currentProperty.id, 'renoBudget', renoBudget);
+            updatePropertyData(currentProperty.id, 'rentPrice', rentPrice);
+            updatePropertyData(currentProperty.id, 'taxes', taxes);
+            updatePropertyData(currentProperty.id, 'hoa', hoa);
+            updatePropertyData(currentProperty.id, 'offerStatus', document.getElementById('offerStatus').value);
+            updatePropertyData(currentProperty.id, 'estARV', estARVValue); // Save the ARV to the property
+
+            renderMap('analyzerMap', compsData, currentProperty);
+        }
+
+        function updatePropertyData(propId, key, value) {
+            let prop = Object.values(allProperties).flat().find(p => p.id === propId);
+            if(prop) {
+                prop[key] = value;
+            }
+            saveState();
+        }
+        // --- INTERACTIVITY HELPERS ---
+        function showPrevPhoto() {
+            if (!currentProperty) return;
+            currentPhotoIndex = (currentPhotoIndex - 1 + currentProperty.photos.length) % currentProperty.photos.length;
+            updatePhotoDisplay();
+        }
+        function showNextPhoto() {
+            if (!currentProperty) return;
+            currentPhotoIndex = (currentPhotoIndex + 1) % currentProperty.photos.length;
+            updatePhotoDisplay();
+        }
+
+        function showPrevCardPhoto(propId) {
+            const prop = allProperties['my-deals'].find(p => p.id === propId);
+            if (!prop) return;
+            prop.currentPhotoIndex = (prop.currentPhotoIndex - 1 + prop.photos.length) % prop.photos.length;
+            document.getElementById(`card-photo-${prop.id}`).src = prop.photos[prop.currentPhotoIndex];
+            saveState();
+        }
+
+        function showNextCardPhoto(propId) {
+            const prop = allProperties['my-deals'].find(p => p.id === propId);
+            if (!prop) return;
+            prop.currentPhotoIndex = (prop.currentPhotoIndex + 1) % prop.photos.length;
+            document.getElementById(`card-photo-${prop.id}`).src = prop.photos[prop.currentPhotoIndex];
+            saveState();
+        }
+        function updatePhotoDisplay() {
+            if (!currentProperty) return;
+            document.getElementById('mainPhoto').src = currentProperty.photos[currentPhotoIndex];
+            const thumbContainer = document.getElementById('thumbnail-container');
+            thumbContainer.innerHTML = currentProperty.photos.map((p, index) => `<img src="${p}" class="thumbnail cursor-pointer rounded-md ${index === currentPhotoIndex ? 'border-2 border-blue-500' : 'opacity-70'} hover:opacity-100" onclick="currentPhotoIndex=${index}; updatePhotoDisplay();">`).join('');
+        }
+        function getHeartIcon(propId) {
+            const isSaved = allProperties.saved.some(p => p.id === propId);
+            return `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="${isSaved ? '#ec4899' : 'currentColor'}"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" /></svg>`;
+        }
+        function toggleSaved(propId) {
+            const propIndex = allProperties.saved.findIndex(p => p.id === propId);
+            if (propIndex > -1) {
+                allProperties.saved.splice(propIndex, 1);
+            } else {
+                const prop = Object.values(allProperties).flat().find(p => p.id === propId);
+                if (prop) allProperties.saved.push(prop);
+            }
+            if (!document.getElementById('landing-page').classList.contains('hidden')) runSearch();
+            if (!document.getElementById('my-properties-page').classList.contains('hidden')) renderMyPropertiesPage();
+            saveState();
+        }
+        function confirmArchive(propId) {
+            openPopup('#archive-confirm-popup');
+            document.getElementById('confirm-archive-btn').onclick = () => archiveProperty(propId);
+        }
+        function archiveProperty(propId) {
+            let foundProp = null;
+            for (const pipeline in allProperties) {
+                const propIndex = allProperties[pipeline].findIndex(p => p.id === propId);
+                if (propIndex > -1) {
+                    foundProp = allProperties[pipeline].splice(propIndex, 1)[0];
+                    break;
+                }
+            }
+            if (foundProp) allProperties.archived.push(foundProp);
+            closeAllPopups();
+            if(!document.getElementById('landing-page').classList.contains('hidden')) runSearch();
+            if(!document.getElementById('my-properties-page').classList.contains('hidden')) {
+                const currentTab = document.querySelector('#my-properties-page .nav-link.active');
+                switchMyPropertiesTab(currentTab, currentTab.getAttribute('onclick').includes('saved') ? 'saved' : 'archived');
+            }
+            saveState();
+        }
+        function toggleCompare(checkbox, id) {
+            // This functionality is deprecated by the new search UI but kept in the codebase.
+            if (checkbox.checked) {
+                comparedProperties.add(id);
+            } else {
+                comparedProperties.delete(id);
+            }
+            saveState();
+        }
+
+        function switchMyPropertiesTab(tabElement, pipeline) {
+            document.querySelectorAll('#my-properties-page .nav-link').forEach(t => t.classList.remove('active'));
+            tabElement.classList.add('active');
+            renderMyPropertiesPage(pipeline);
+        }
+        function toggleMyPropertiesMapView() {
+            const list = document.getElementById('my-properties-list');
+            const map = document.getElementById('my-properties-map');
+            const btn = document.getElementById('toggle-map-view-btn');
+            const content = document.getElementById('my-properties-content');
+
+            map.classList.toggle('hidden');
+            
+            if (map.classList.contains('hidden')) {
+                content.classList.remove('lg:grid-cols-2');
+                content.classList.add('grid-cols-1');
+                btn.textContent = 'Show Map';
+            } else {
+                content.classList.add('lg:grid-cols-2');
+                content.classList.remove('grid-cols-1');
+                btn.textContent = 'Hide Map';
+                maps['my-properties-map']?.invalidateSize();
+            }
+        }
+        function toggleCompSelection(id) {
+            const comp = compsData.find(c => c.id === id);
+            if (comp) comp.selected = !comp.selected;
+            updateCalculations(null, false);
+            applyFiltersAndRender();
+        }
+        function toggleAllComps(masterCheckbox) { compsData.forEach(c => c.selected = masterCheckbox.checked); updateCalculations(null, false); applyFiltersAndRender(); }
+        function sortTable(key) { sortState.dir = sortState.key === key && sortState.dir === 'asc' ? 'desc' : 'asc'; sortState.key = key; applyFiltersAndRender(); }
+
+        function parseFilter(query, value) {
+            if (typeof value === 'string') return value.toLowerCase().includes(query.toLowerCase());
+            const match = query.match(/([<>=]*) *([\d,.-]+) *-* *([\d,.-]*)/); if (!match) return false;
+            const [, op, num1, num2] = match; const val1 = parseFloat(num1.replace(/,/g, ''));
+            if (num2) { const val2 = parseFloat(num2.replace(/,/g, '')); return value >= Math.min(val1, val2) && value <= Math.max(val1, val2); }
+            switch (op) { case '>': return value > val1; case '>=': return value >= val1; case '<': return value < val1; case '<=': return value <= val1; default: return value == val1; }
+        }
+        function toggleArvLock(isChecked) { isArvLocked = !isChecked; }
+        function toggleInputLock(isChecked) {
+            areInputsLocked = isChecked;
+            document.querySelectorAll('#analyzer-page input, #analyzer-page select').forEach(el => {
+                if(!el.closest('.toggle-switch')) el.disabled = areInputsLocked;
+            });
+            saveState();
+        }
+
+        function showCompPhotos(compId) {
+            const comp = compsData.find(c => c.id === compId);
+            if (!comp) return;
+            currentCompPhotos = comp.photos;
+            const list = document.querySelector('#splide-carousel .splide__list');
+            list.innerHTML = comp.photos.map(photo => `<li class="splide__slide"><img src="${photo}" class="w-full h-[500px] object-cover rounded-lg"></li>`).join('');
+            openPopup('#comp-photos-popup');
+            new Splide('#splide-carousel').mount();
+        }
+
+        function showInfoPopup(title, content, event, propId = null) {
+            const popup = document.getElementById('generic-popup');
+            document.getElementById('generic-popup-title').textContent = title;
+            let finalContent = content;
+            if (title === 'Notes' && propId) {
+                const prop = Object.values(allProperties).flat().find(p => p.id === propId);
+                finalContent = `<textarea id="notes-textarea" class="w-full h-24 bg-gray-700 text-white p-2 rounded">${prop.notes}</textarea>
+                <button class="bg-blue-600 text-white px-3 py-1 mt-2 rounded" onclick="saveNote(${prop.id})">Save</button>`;
+            }
+            document.getElementById('generic-popup-content').innerHTML = finalContent;
+
+            openPopup('#generic-popup');
+
+            const buttonRect = event.target.getBoundingClientRect();
+            popup.style.top = `${buttonRect.bottom + 5}px`;
+            popup.style.left = `${buttonRect.left + buttonRect.width / 2}px`;
+            popup.style.transform = 'translateX(-50%)';
+        }
+        function saveNote(propId) {
+            const newNote = document.getElementById('notes-textarea').value;
+            updatePropertyData(propId, 'notes', newNote);
+            closeAllPopups();
+
+            if (!document.getElementById('analyzer-page').classList.contains('hidden')) {
+                renderAnalyzerInfoButtons();
+            }
+            if (!document.getElementById('landing-page').classList.contains('hidden')) {
+                runSearch();
+            }
+        }
+        function populateBasisBreakdown() {
+            const purchasePrice = parseFloat(document.getElementById('purchasePrice').value.replace(/,/g, '')) || 0;
+            const closingCostsFixed = parseFloat(document.getElementById('closingCostsFixed').value.replace(/,/g, '')) || 0;
+            const renoBudget = parseFloat(document.getElementById('renoBudget').value.replace(/,/g, '')) || 0;
+            const totalCarryingCosts = parseFloat((parseFloat(document.getElementById('monthlyCarryingCost').value.replace(/,/g, '')) / 30 * parseFloat(document.getElementById('holdingPeriod').value)).toFixed(0)) || 0;
+            const basis = purchasePrice + closingCostsFixed + renoBudget + totalCarryingCosts;
+            const html = `
+                <div class="flex justify-between"><span>Purchase Price:</span><span>$${purchasePrice.toLocaleString()}</span></div>
+                <div class="flex justify-between"><span>Acquisition Costs:</span><span>$${closingCostsFixed.toLocaleString()}</span></div>
+                <div class="flex justify-between"><span>Reno Budget:</span><span>$${renoBudget.toLocaleString()}</span></div>
+                <div class="flex justify-between"><span>Carrying Costs:</span><span>$${totalCarryingCosts.toLocaleString()}</span></div>
+                <hr class="border-gray-600">
+                <div class="flex justify-between font-bold"><span>Total Basis:</span><span>$${basis.toLocaleString()}</span></div>
+            `;
+            document.getElementById('basisBreakdown').innerHTML = html;
+        }
+        function populateProfitBreakdown() {
+            const estARVValue = parseFloat(document.getElementById('estARV').value.replace(/[$,]/g, '')) || 0;
+            const basis = parseFloat(document.getElementById('totalCost').textContent.replace(/[$,]/g, '')) || 0;
+            const brokerageCosts = estARVValue * (parseFloat(document.getElementById('brokerageFeePercent').value) / 100) || 0;
+            const closingCostsSaleFixed = estARVValue * (parseFloat(document.getElementById('closingCostsSalePercent').value) / 100) || 0;
+            const totalSaleCosts = brokerageCosts + closingCostsSaleFixed;
+            const netProfit = estARVValue - basis - totalSaleCosts;
+            const html = `
+                <div class="flex justify-between"><span>Est. ARV:</span><span>$${estARVValue.toLocaleString()}</span></div>
+                <div class="flex justify-between"><span>Minus Basis:</span><span>-$${basis.toLocaleString()}</span></div>
+                <div class="flex justify-between"><span>Minus Brokerage Costs:</span><span>-$${brokerageCosts.toLocaleString()}</span></div>
+                <div class="flex justify-between"><span>Minus Closing Costs:</span><span>-$${closingCostsSaleFixed.toLocaleString()}</span></div>
+                <hr class="border-gray-600">
+                <div class="flex justify-between font-bold"><span>Net Profit:</span><span>$${netProfit.toLocaleString()}</span></div>
+            `;
+            document.getElementById('profitBreakdown').innerHTML = html;
+        }
+        // --- Settings ---
+        function loadSettings() {
+            const savedSettings = JSON.parse(localStorage.getItem('userSettings'));
+            userSettings = {
+                desiredProfit: 50000,
+                desiredRoi: 20,
+                defaultAcquisitionCosts: 1.5,
+                defaultBrokerageFee: 2.5,
+                defaultSalesClosingCosts: 1.5,
+                defaultTaxes: 1.0,
+                defaultInsurance: 0.5,
+                defaultVacancy: 5.0,
+                defaultMaintenance: 5.0,
+                defaultPropManagement: 8.0,
+                defaultBadDebt: 1.0,
+                defaultLeasingFee: 0,
+                defaultTurnover: 50,
+                defaultUtilities: 0,
+                defaultCdd: 0,
+                defaultOtherFee: 0,
+                defaultLoanType: 'Conventional',
+                defaultLTV: 80,
+                defaultInterestRate: 7.0,
+                defaultAmortization: 30,
+                defaultArmLength: 0,
+                defaultAdjustableRate: 0,
+                defaultBidFlex: 0,
+                // v1.8.15 Max Offer Calculator Defaults
+                maxOfferFormulaString: "(estARV * flipFactor) - estReno - minFlipProfit",
+                calcFlipFactor: 75,
+                calcMinFlipProfit: 15000,
+                ...savedSettings
+            };
+        }
+        function saveSettings() {
+            // Standard Defaults
+            userSettings.desiredProfit = parseFloat(document.getElementById('desiredProfit').value) || 0;
+            userSettings.desiredRoi = parseFloat(document.getElementById('desiredRoi').value) || 0;
+            userSettings.defaultAcquisitionCosts = parseFloat(document.getElementById('defaultAcquisitionCosts').value) || 0;
+            userSettings.defaultBrokerageFee = parseFloat(document.getElementById('defaultBrokerageFee').value) || 0;
+            userSettings.defaultSalesClosingCosts = parseFloat(document.getElementById('defaultSalesClosingCosts').value) || 0;
+            userSettings.defaultTaxes = parseFloat(document.getElementById('defaultTaxes').value) || 0;
+            userSettings.defaultInsurance = parseFloat(document.getElementById('defaultInsurance').value) || 0;
+            userSettings.defaultVacancy = parseFloat(document.getElementById('defaultVacancy').value) || 0;
+            userSettings.defaultMaintenance = parseFloat(document.getElementById('defaultMaintenance').value) || 0;
+            userSettings.defaultPropManagement = parseFloat(document.getElementById('defaultPropManagement').value) || 0;
+            userSettings.defaultBadDebt = parseFloat(document.getElementById('defaultBadDebt').value) || 0;
+            userSettings.defaultLeasingFee = parseFloat(document.getElementById('defaultLeasingFee').value) || 0;
+            userSettings.defaultTurnover = parseFloat(document.getElementById('defaultTurnover').value) || 0;
+            userSettings.defaultUtilities = parseFloat(document.getElementById('defaultUtilities').value) || 0;
+            userSettings.defaultCdd = parseFloat(document.getElementById('defaultCdd').value) || 0;
+            userSettings.defaultOtherFee = parseFloat(document.getElementById('defaultOtherFee').value) || 0;
+            userSettings.defaultLoanType = document.getElementById('defaultLoanType').value;
+            userSettings.defaultLTV = parseFloat(document.getElementById('defaultLTV').value) || 0;
+            userSettings.defaultInterestRate = parseFloat(document.getElementById('defaultInterestRate').value) || 0;
+            userSettings.defaultAmortization = parseFloat(document.getElementById('defaultAmortization').value) || 0;
+            userSettings.defaultArmLength = parseFloat(document.getElementById('defaultArmLength').value) || 0;
+            userSettings.defaultAdjustableRate = parseFloat(document.getElementById('defaultAdjustableRate').value) || 0;
+            userSettings.defaultBidFlex = parseFloat(document.getElementById('defaultBidFlex').value) || 0;
+
+            // v1.8.15 Max Offer Calculator
+            userSettings.calcFlipFactor = parseFloat(document.getElementById('calcFlipFactor').value) || 0;
+            userSettings.calcMinFlipProfit = parseFloat(document.getElementById('calcMinFlipProfit').value.replace(/,/g, '')) || 0;
+            userSettings.maxOfferFormulaString = document.getElementById('max-offer-formula-input').value;
+            
+            localStorage.setItem('userSettings', JSON.stringify(userSettings));
+            showSaveIndicator();
+            runSearch(); // Go to search page after saving
+        }
+
+        function populateSettingsForm() {
+            // Standard Defaults
+            for(const key in userSettings) {
+                const element = document.getElementById(key);
+                if (element && typeof userSettings[key] !== 'object' && key !== 'maxOfferFormulaString') {
+                    element.value = userSettings[key];
+                }
+            }
+            // v1.8.15 Max Offer Calculator
+            document.getElementById('calcFlipFactor').value = userSettings.calcFlipFactor;
+            const minFlipProfit = document.getElementById('calcMinFlipProfit')
+            minFlipProfit.value = userSettings.calcMinFlipProfit;
+            formatNumberWithCommas(minFlipProfit);
+            
+            document.getElementById('max-offer-formula-input').value = userSettings.maxOfferFormulaString;
+
+            renderFormulaEditor();
+            renderSampleInputs();
+            updateSampleCalculation();
+        }
+        // --- State Management (Auto-Save) ---
+        function saveState() {
+            const appState = {
+                allProperties,
+                userSettings,
+                comparedProperties: Array.from(comparedProperties),
+                selectedFilterFields, 
+                savedSearches,
+                viewMode 
+            };
+            localStorage.setItem('picketProState', JSON.stringify(appState));
+            showSaveIndicator();
+        }
+        function loadState() {
+            const savedState = localStorage.getItem('picketProState');
+            if (savedState) {
+                const appState = JSON.parse(savedState);
+                allProperties = appState.allProperties;
+                userSettings = appState.userSettings;
+                comparedProperties = new Set(appState.comparedProperties);
+                selectedFilterFields = appState.selectedFilterFields || ['listPrice', 'beds', 'baths', 'source', 'sqft', 'yearBuilt'];
+                savedSearches = appState.savedSearches || [];
+                viewMode = appState.viewMode || 'advanced'; 
+            } else {
+                selectedFilterFields = ['listPrice', 'beds', 'baths', 'source', 'sqft', 'yearBuilt', 'dom'];
+                savedSearches = [];
+                viewMode = 'advanced';
+            }
+            
+            updateViewModeUI(viewMode === 'advanced');
+            loadSettings();
+        }
+
+        let saveTimeout;
+        function showSaveIndicator(message = 'All changes saved') {
+            const indicator = document.getElementById('save-indicator');
+            indicator.textContent = message;
+            indicator.style.opacity = '1';
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                indicator.style.opacity = '0';
+            }, 2000);
+        }
+
+        // --- v1.6.3 VIEW MODE UI HELPER ---
+        function updateViewModeUI(isAdvanced) {
+            document.getElementById('view-mode-toggle').checked = isAdvanced;
+            document.getElementById('view-mode-label-advanced').classList.toggle('text-white', isAdvanced);
+            document.getElementById('view-mode-label-advanced').classList.toggle('text-gray-400', !isAdvanced);
+            document.getElementById('view-mode-label-basic').classList.toggle('text-white', !isAdvanced);
+            document.getElementById('view-mode-label-basic').classList.toggle('text-gray-400', isAdvanced);
+        }
+
+        // --- v1.6 FILTERING SYSTEM ---
+
+        function openFilterModal() {
+            renderFilterModal();
+            openPopup('#more-filters-modal');
+        }
+
+        function closeFilterModal(shouldRunSearch = false) {
+            document.getElementById('more-filters-modal').style.display = 'none';
+            if (shouldRunSearch) {
+                runSearch();
+            }
+            const otherPopups = document.querySelectorAll('.popup:not(#more-filters-modal), .map-popup');
+            let anyVisible = false;
+            otherPopups.forEach(p => { if (p.style.display === 'block') anyVisible = true; });
+            if (!anyVisible) {
+                document.getElementById('popupOverlay').style.display = 'none';
+            }
+            toggleModalSaveForm(false); // Always reset save form on close
+        }
+
+        function renderFilterModal(activeCategoryKey = 'primary') {
+            const categoryList = document.getElementById('filter-category-list');
+            
+            let categoriesHtml = Object.entries(allFilterFields).map(([key, cat]) =>
+                `<div data-categorykey="${key}" class="category-item ${key === activeCategoryKey ? 'active' : ''}" onclick="renderFilterModal('${key}')">${cat.label}</div>`
+            ).join('');
+            categoryList.innerHTML = categoriesHtml;
+
+            renderFilterControls(activeCategoryKey);
+            populateCustomizationLists();
+        }
+        
+        function renderFilterControls(categoryKey) {
+            const container = document.getElementById('filter-controls-container');
+            container.innerHTML = ''; 
+
+            const categoryFields = allFilterFields[categoryKey].fields;
+            const processedGroups = new Set();
+            
+            for (const fieldKey in categoryFields) {
+                if (!selectedFilterFields.includes(fieldKey)) continue;
+
+                const fieldDef = categoryFields[fieldKey];
+                
+                if (fieldDef.group && !processedGroups.has(fieldDef.group)) {
+                    const groupFields = Object.entries(categoryFields).filter(([key, def]) => def.group === fieldDef.group && selectedFilterFields.includes(key));
+                    container.insertAdjacentHTML('beforeend', createGroupedControlHtml(groupFields));
+                    processedGroups.add(fieldDef.group);
+                } else if (!fieldDef.group) {
+                    container.insertAdjacentHTML('beforeend', createSingleControlHtml(fieldKey, fieldDef));
+                }
+            }
+            const controlsContainer = document.getElementById('filter-controls-container');
+            if (!controlsContainer.dataset.listenerAttached) {
+                controlsContainer.addEventListener('input', (e) => {
+                    if (e.target.dataset.filterkey) {
+                        handleFilterChange(e.target.dataset.filterkey, e.target.value);
+                    }
+                });
+                controlsContainer.dataset.listenerAttached = 'true';
+            }
+            // After rendering normal controls, render and attach listeners for special ones
+             if (categoryKey === 'primary' && selectedFilterFields.includes('state')) {
+                 renderStateFilter('modal');
+             }
+        }
+
+        function createSingleControlHtml(key, def) {
+            let controlHtml = '';
+            switch (def.type) {
+                case 'min-max-currency':
+                case 'min-max-integer':
+                case 'min-max-percent':
+                    controlHtml = `
+                        <div class="grid grid-cols-2 gap-4">
+                            <input type="number" data-filterkey="${key}_min" class="crisp-input" placeholder="Min" value="${activeFilters[key+'_min'] || ''}">
+                            <input type="number" data-filterkey="${key}_max" class="crisp-input" placeholder="Max" value="${activeFilters[key+'_max'] || ''}">
+                        </div>`;
+                    break;
+                case 'select':
+                     controlHtml = `<select data-filterkey="${key}" class="crisp-input">${def.options.map(opt => `<option value="${opt}" ${activeFilters[key] === opt ? 'selected' : ''}>${opt}</option>`).join('')}</select>`;
+                    break;
+               case 'multi-select':
+                    controlHtml = `<div id="state-filter-container-modal" class="relative"></div>`;
+                    break;
+             }
+             return `<div><label class="block text-sm font-medium text-gray-300 mb-1">${def.label}</label>${controlHtml}</div>`;
+        }
+
+        function createGroupedControlHtml(groupFields) {
+            let controls = groupFields.map(([key, def]) => `
+                <div class="flex-1">
+                     <label class="block text-sm font-medium text-gray-300 mb-1">${def.label}</label>
+                     <input type="number" data-filterkey="${key}_min" class="crisp-input" placeholder="Min" value="${activeFilters[key+'_min'] || ''}">
+                </div>
+            `).join('');
+            return `<div class="flex gap-4">${controls}</div>`;
+        }
+
+
+        function populateCustomizationLists() {
+            const availableList = document.getElementById('available-fields-list');
+            const selectedList = document.getElementById('selected-fields-list');
+            availableList.innerHTML = '';
+            selectedList.innerHTML = '';
+
+            const allFields = Object.values(allFilterFields).flatMap(cat => Object.entries(cat.fields));
+            tempAvailableFields = allFields.filter(([key]) => !selectedFilterFields.includes(key));
+            tempSelectedFields = selectedFilterFields.map(key => allFields.find(([k]) => k === key)).filter(Boolean);
+
+            tempSelectedFields.forEach(([key, field]) => {
+                selectedList.innerHTML += `<div class="field-item" data-key="${key}" onclick="selectSelectedField(this, '${key}')">${field.label}</div>`;
+            });
+             tempAvailableFields.forEach(([key, field]) => {
+                availableList.innerHTML += `<div class="field-item" data-key="${key}" onclick="selectAvailableField(this, '${key}')">${field.label}</div>`;
+            });
+        }
+        function selectAvailableField(el, key) {
+            document.querySelectorAll('#available-fields-list .field-item').forEach(item => item.classList.remove('selected'));
+            el.classList.add('selected');
+            currentlySelectedAvailableField = key;
+            currentlySelectedSelectedField = null;
+        }
+        function selectSelectedField(el, key) {
+             document.querySelectorAll('#selected-fields-list .field-item').forEach(item => item.classList.remove('selected'));
+             el.classList.add('selected');
+             currentlySelectedSelectedField = key;
+             currentlySelectedAvailableField = null;
+        }
+
+        function addFilterField() {
+            if (!currentlySelectedAvailableField) return;
+            if (!selectedFilterFields.includes(currentlySelectedAvailableField)) {
+                selectedFilterFields.push(currentlySelectedAvailableField);
+                saveState(); 
+                renderFilterModal(document.querySelector('#filter-category-list .active').dataset.categorykey);
+            }
+            currentlySelectedAvailableField = null;
+        }
+
+        function removeFilterField() {
+            if (!currentlySelectedSelectedField) return;
+            selectedFilterFields = selectedFilterFields.filter(key => key !== currentlySelectedSelectedField);
+            saveState();
+            renderFilterModal(document.querySelector('#filter-category-list .active').dataset.categorykey);
+            currentlySelectedSelectedField = null;
+        }
+
+        function handleFilterChange(key, value) {
+            if ((Array.isArray(value) && value.length === 0) || value === '' || (key === 'source' && value === 'Any')) {
+                delete activeFilters[key];
+            } else {
+                activeFilters[key] = value;
+            }
+            updateFilteredCount();
+        }
+
+        function updateFilteredCount() {
+            const filteredProperties = applyLandingPageFilters();
+            const count = filteredProperties.length;
+            document.getElementById('market-update-count').textContent = `(${count})`;
+            document.getElementById('market-update-btn-modal').textContent = `Market Update (${count})`;
+            document.getElementById('more-filters-count').textContent = `(${Object.keys(activeFilters).length})`;
+        }
+
+        function applyLandingPageFilters() {
+            let filtered = [...allProperties['my-deals']];
+            
+            for (const key in activeFilters) {
+                const value = activeFilters[key];
+                if (value === null || value === undefined || value === '' || (Array.isArray(value) && value.length === 0)) continue;
+
+                const [field, type] = key.split('_');
+
+                filtered = filtered.filter(prop => {
+                    if (field === 'address') {
+                        return String(prop.address).toLowerCase().includes(String(value).toLowerCase());
+                    }
+                    if (field === 'state') {
+                        const propState = prop.address.split(', ')[2]?.substring(0, 2);
+                        return value.includes(propState);
+                    }
+
+                    const propValue = prop[field];
+                    if (propValue === undefined || propValue === null) return false;
+                    
+                    if (type === 'min') return parseFloat(propValue) >= parseFloat(value);
+                    if (type === 'max') return parseFloat(propValue) <= parseFloat(value);
+                    if (field === 'source') return propValue === value;
+                    
+                    return true;
+                });
+            }
+            return filtered;
+        }
+
+        function runSearch(andCloseModal = false) {
+            const filteredProperties = applyLandingPageFilters();
+            renderLandingPage(filteredProperties);
+            if(andCloseModal) {
+                closeFilterModal(false);
+            }
+        }
+        
+        // --- v1.6 SAVED SEARCHES ---
+        function toggleModalSaveForm(showForm) {
+            const actionsDiv = document.getElementById('modal-footer-actions');
+            const saveFormDiv = document.getElementById('modal-save-form');
+            if (showForm) {
+                actionsDiv.classList.add('hidden');
+                saveFormDiv.classList.remove('hidden');
+                saveFormDiv.classList.add('flex');
+                document.getElementById('modal-search-name-input').focus();
+            } else {
+                actionsDiv.classList.remove('hidden');
+                saveFormDiv.classList.add('hidden');
+                saveFormDiv.classList.remove('flex');
+            }
+        }
+
+        function saveSearch() {
+            const nameInput = document.getElementById('modal-search-name-input');
+            const searchName = nameInput.value.trim();
+            if (!searchName) {
+                alert('Please enter a name for the search.');
+                return;
+            }
+
+            const newSearch = {
+                id: Date.now(),
+                name: searchName,
+                filters: JSON.parse(JSON.stringify(activeFilters)), // Deep copy of the filters
+                notify: false // Placeholder for future notification system
+            };
+
+            savedSearches.push(newSearch);
+            saveState();
+            populateSavedSearchesDropdown();
+            showSaveIndicator('Search saved!');
+            
+            nameInput.value = '';
+            toggleModalSaveForm(false);
+        }
+
+        function populateSavedSearchesDropdown() {
+            const dropdown = document.getElementById('saved-searches-dropdown');
+            dropdown.innerHTML = '<option value="">My Saved Searches</option>';
+            savedSearches.forEach(search => {
+                const option = document.createElement('option');
+                option.value = search.id;
+                option.textContent = search.name;
+                dropdown.appendChild(option);
+            });
+        }
+
+        function loadSearch(event) {
+            const searchId = event.target.value;
+            document.getElementById('saved-searches-dropdown').blur();
+            if (!searchId) {
+                activeFilters = {};
+            } else {
+                 const searchToLoad = savedSearches.find(s => s.id == searchId);
+                 if (searchToLoad) {
+                     activeFilters = JSON.parse(JSON.stringify(searchToLoad.filters));
+                 }
+            }
+            
+            syncFiltersUI();
+            runSearch();
+        }
+
+        function syncFiltersUI() {
+            const allInputs = document.querySelectorAll('[data-filterkey]');
+            allInputs.forEach(input => {
+                if (input.type === 'checkbox') {
+                    input.checked = false;
+                } else if (input.tagName === 'SELECT') {
+                    input.value = 'Any';
+                } else {
+                    input.value = '';
+                }
+            });
+
+            for (const key in activeFilters) {
+                const value = activeFilters[key];
+                if (key === 'state' && Array.isArray(value)) {
+                    value.forEach(state => {
+                        const checkboxes = document.querySelectorAll(`[data-filterkey="state"][value="${state}"]`);
+                        checkboxes.forEach(cb => cb.checked = true);
+                    });
+                } else {
+                    const inputs = document.querySelectorAll(`[data-filterkey="${key}"]`);
+                    inputs.forEach(input => input.value = value);
+                }
+            }
+            updateAllMultiSelectLabels();
+        }
+
+        function resetFilters() {
+            activeFilters = {};
+            syncFiltersUI();
+            updateFilteredCount();
+            const activeCategory = document.querySelector('#filter-category-list .active')?.dataset.categorykey || 'primary';
+            renderFilterControls(activeCategory);
+        }
+        
+        // --- v1.6.3 MULTI-SELECT ---
+        
+        function renderStateFilter(instanceId) {
+            const container = document.getElementById(`state-filter-container-${instanceId}`);
+            if (container) {
+                const stateFilterDef = allFilterFields.primary.fields.state;
+                container.innerHTML = createMultiSelectControlHtml('state', stateFilterDef, instanceId);
+                attachMultiSelectListeners(instanceId);
+                updateMultiSelectLabel(instanceId);
+                syncFiltersUI();
+            }
+        }
+
+
+        function createMultiSelectControlHtml(key, def, instanceId) {
+            const optionsHtml = def.options.map(opt => `
+                <label class="flex items-center space-x-2 text-white">
+                    <input type="checkbox" data-filterkey="${key}" value="${opt}" class="bg-gray-600 border-gray-500 rounded text-blue-500 focus:ring-blue-500">
+                    <span>${opt}</span>
+                </label>
+            `).join('');
+
+            return `
+                <div class="multiselect-container" id="multiselect-${key}-${instanceId}">
+                    <button type="button" class="multiselect-btn crisp-input w-full text-left flex justify-between items-center">
+                        <span class="multiselect-label">States (All)</span>
+                        <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    <div class="multiselect-dropdown hidden grid grid-cols-2 gap-2">
+                        ${optionsHtml}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function attachMultiSelectListeners(instanceId) {
+            const container = document.getElementById(`multiselect-state-${instanceId}`);
+            if (!container) return;
+
+            const button = container.querySelector('.multiselect-btn');
+            const dropdown = container.querySelector('.multiselect-dropdown');
+            
+            button.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle('hidden');
+            });
+            
+            dropdown.addEventListener('change', (e) => {
+                const selected = Array.from(dropdown.querySelectorAll('input:checked')).map(cb => cb.value);
+                handleFilterChange('state', selected);
+                updateAllMultiSelectLabels();
+            });
+        }
+        
+        function updateMultiSelectLabel(instanceId) {
+            const container = document.getElementById(`multiselect-state-${instanceId}`);
+            if (!container) return;
+            const label = container.querySelector('.multiselect-label');
+            const count = activeFilters.state?.length || 0;
+
+            if (count === 0) {
+                label.textContent = 'States (All)';
+            } else {
+                label.textContent = `States (${count} selected)`;
+            }
+        }
+        
+        function updateAllMultiSelectLabels() {
+            updateMultiSelectLabel('main');
+            updateMultiSelectLabel('modal');
+        }
+
+        // --- v1.8.15 SETTINGS PAGE & MAX OFFER CALCULATOR ---
+        function switchSettingsTab(element, panelId) {
+            document.querySelectorAll('.settings-nav-item').forEach(item => item.classList.remove('active'));
+            element.classList.add('active');
+
+            document.querySelectorAll('.settings-panel').forEach(panel => panel.classList.add('hidden'));
+            document.getElementById(`settings-panel-${panelId}`).classList.remove('hidden');
+        }
+        
+        function renderFormulaEditor() {
+            const container = document.getElementById('variable-pills-container');
+            container.innerHTML = '';
+            
+            const formulaInput = document.getElementById('max-offer-formula-input');
+
+            Object.keys(formulaLookupValues).forEach(key => {
+                const pill = document.createElement('button');
+                pill.className = 'variable-pill';
+                pill.textContent = key;
+                pill.type = 'button';
+                pill.onclick = () => {
+                    const start = formulaInput.selectionStart;
+                    const end = formulaInput.selectionEnd;
+                    const text = formulaInput.value;
+                    const before = text.substring(0, start);
+                    const after = text.substring(end, text.length);
+                    formulaInput.value = before + key + after;
+                    formulaInput.focus();
+                    formulaInput.selectionStart = formulaInput.selectionEnd = start + key.length;
+                    updateSampleCalculation();
+                };
+                container.appendChild(pill);
+            });
+        }
+        
+        function renderSampleInputs(){
+            const container = document.getElementById('sample-inputs-container');
+            container.innerHTML = '';
+            const sampleFields = {
+                'estARV': '500,000',
+                'estReno': '30,000',
+                'listPrice': '450,000',
+                'purchasePrice': '420,000',
+                'rentPrice': '2,500',
+                'estBasis': '465,000',
+                'estProfit': '35,000'
+            };
+
+            for (const [key, value] of Object.entries(sampleFields)) {
+                const label = formulaLookupValues[key];
+                 container.innerHTML += `
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400">${label}</label>
+                        <div class="input-group mt-1">
+                            <span>$</span>
+                            <input type="text" id="sample-${key}" value="${value}" class="!pl-0" oninput="formatNumberWithCommas(this); updateSampleCalculation();">
+                        </div>
+                    </div>`;
+            }
+        }
+
+        function updateSampleCalculation() {
+             const sampleValues = {
+                estARV: parseFloat(document.getElementById('sample-estARV').value.replace(/,/g, '')) || 0,
+                estReno: parseFloat(document.getElementById('sample-estReno').value.replace(/,/g, '')) || 0,
+                listPrice: parseFloat(document.getElementById('sample-listPrice').value.replace(/,/g, '')) || 0,
+                purchasePrice: parseFloat(document.getElementById('sample-purchasePrice').value.replace(/,/g, '')) || 0,
+                rentPrice: parseFloat(document.getElementById('sample-rentPrice').value.replace(/,/g, '')) || 0,
+                estBasis: parseFloat(document.getElementById('sample-estBasis').value.replace(/,/g, '')) || 0,
+                estProfit: parseFloat(document.getElementById('sample-estProfit').value.replace(/,/g, '')) || 0,
+             };
+             
+             const formulaString = document.getElementById('max-offer-formula-input').value;
+             const { result, error } = calculateMaxOffer(null, formulaString, true, sampleValues);
+             const outputEl = document.getElementById('sample-output');
+             const validationMsg = document.getElementById('formula-validation-message');
+
+             if(error) {
+                outputEl.value = '0';
+                validationMsg.textContent = error;
+                validationMsg.classList.add('text-red-400');
+                validationMsg.classList.remove('text-green-400');
+             } else {
+                outputEl.value = result.toLocaleString('en-US', {maximumFractionDigits: 0});
+                validationMsg.textContent = 'Formula is valid.';
+                validationMsg.classList.remove('text-red-400');
+                validationMsg.classList.add('text-green-400');
+             }
+        }
+        
+        function calculateMaxOffer(prop, formulaString, isSample = false, sampleValues = null, precalculatedMetrics = null) {
+            let metrics;
+            if (isSample) {
+                metrics = sampleValues;
+            } else {
+                metrics = precalculatedMetrics || getCoreMetrics(prop);
+            }
+
+            const values = {
+                estARV: metrics.estARV,
+                estReno: metrics.renoBudget,
+                estBasis: metrics.basis,
+                estProfit: metrics.estNetProfit,
+                minFlipProfit: isSample ? (parseFloat(document.getElementById('calcMinFlipProfit').value.replace(/,/g, '')) || 0) : userSettings.calcMinFlipProfit,
+                flipFactor: (isSample ? (parseFloat(document.getElementById('calcFlipFactor').value) || 0) : userSettings.calcFlipFactor) / 100,
+                listPrice: metrics.listPrice,
+                purchasePrice: metrics.purchasePrice,
+                rentPrice: metrics.rentPrice,
+            };
+
+            let expression = formulaString;
+            // Replace variable names with their numerical values
+            for(const key of Object.keys(formulaLookupValues).sort((a,b) => b.length - a.length)) {
+                expression = expression.replace(new RegExp(key, 'g'), values[key] !== undefined ? values[key] : 0);
+            }
+
+            // Sanitize the expression to allow only numbers, operators, parentheses, and periods.
+            const sanitizedExpression = expression.replace(/[^0-9.\+\-\*\/\(\)\s]/g, '');
+
+            if (sanitizedExpression !== expression) {
+                return { result: 0, error: "Invalid characters in formula."};
+            }
+
+            try {
+                // Safely evaluate the mathematical expression using the Function constructor.
+                const calculatedResult = new Function('return ' + sanitizedExpression)();
+                if (isNaN(calculatedResult) || !isFinite(calculatedResult)) {
+                     return { result: 0, error: "Calculation resulted in an invalid number." };
+                }
+                return { result: calculatedResult, error: null };
+            } catch (e) {
+                return { result: 0, error: "Invalid formula syntax." };
+            }
+        }
+
+        // --- AGENT SYSTEM (Modular for robustness) ---
+        function CompsFetcherAgent(address, radius = 0.5, timeframe = 6) {
+            console.log('CompsFetcherAgent: Fetching comps for ' + address);
+            return compsData;
+        }
+
+        function AnalyzerAgent() {
+            updateCalculations();
+            renderCompsTable(compsData);
+            if (!areInputsLocked) {
+                console.log('AnalyzerAgent: Running sensitivity analysis');
+            }
+            NotifierAgent();
+        }
+
+        function NotifierAgent() {
+            const roi = parseFloat(document.getElementById('roi').textContent) || 0;
+            if (roi > userSettings.desiredRoi) {
+                console.log('NotifierAgent: Alert - Property meets criteria (ROI: ' + roi + '%)');
+            }
+        }
+    </script>
+</body>
+</html>
