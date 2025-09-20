@@ -37,3 +37,8 @@ logs/
 **/cert/
 **/screenshots/
 logs/
+# Experiments (keep code, ignore artifacts)
+experiments/**/screenshots/
+experiments/**/cert/
+experiments/**/venv*/
+experiments/**/.venv*/
