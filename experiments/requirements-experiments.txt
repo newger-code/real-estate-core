@@ -1,0 +1,1 @@
+# put the scraper-specific deps here (playwright, yaml, bs4, etc.)
